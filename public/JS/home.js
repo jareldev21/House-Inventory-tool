@@ -8,7 +8,6 @@ import {
 } from
 "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
-
 const firebaseConfig = {
     apiKey: "AIzaSyAUiAsV7mLbwgAedq6KPafjLOwrNYFKyYw",
     authDomain: "jareljaz-house.firebaseapp.com",
@@ -19,19 +18,13 @@ const firebaseConfig = {
     measurementId: "G-4ZHJCZWS1T"
 };
 
-
 const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
 
-
 onAuthStateChanged(auth, function(user) {
 
-    if (!user) {
-
-        window.location.href = "index.html";
-
-    }
+    if (!user) {window.location.href = "index.html";}
 
 });
 
@@ -45,10 +38,8 @@ logoutButton.addEventListener("click", async function() {
 
         window.location.href = "index.html";
 
-    } catch (error) {
-
-        console.error("Logout failed:", error);
-
-    }
+    } 
+    
+    catch (error) {console.error("Logout failed:", error);}
 
 });

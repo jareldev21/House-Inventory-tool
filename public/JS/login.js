@@ -7,7 +7,6 @@ import {
 } from
 "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
-
 const firebaseConfig = {
     apiKey: "AIzaSyAUiAsV7mLbwgAedq6KPafjLOwrNYFKyYw",
     authDomain: "jareljaz-house.firebaseapp.com",
@@ -18,23 +17,16 @@ const firebaseConfig = {
     measurementId: "G-4ZHJCZWS1T"
 };
 
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+const loginForm = document.getElementById("login-form");
 
-const loginForm =
-    document.getElementById("login-form");
+const emailInput = document.getElementById("email");
 
-const emailInput =
-    document.getElementById("email");
+const passwordInput = document.getElementById("password");
 
-const passwordInput =
-    document.getElementById("password");
-
-const message =
-    document.getElementById("message");
-
+const message = document.getElementById("message");
 
 loginForm.addEventListener("submit", async function(event) {
 
@@ -46,7 +38,6 @@ loginForm.addEventListener("submit", async function(event) {
     message.textContent = "Logging in...";
 
     try {
-
         await signInWithEmailAndPassword(
             auth,
             email,
@@ -59,11 +50,8 @@ loginForm.addEventListener("submit", async function(event) {
 
         console.error(error);
 
-        message.textContent =
-            "Incorrect email or password.";
+        message.textContent = "Incorrect email or password.";
 
     }
-
-
 
 });
