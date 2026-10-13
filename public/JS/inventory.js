@@ -154,6 +154,14 @@ function renderCategories() {
 
         editCategoryButton.textContent = 'Edit Category';
 
+        editCategoryButton.addEventListener('click', function () {
+
+            const updatedCategoryName = window.prompt('Edit Category Name:', category.name);
+
+            console.log(updatedCategoryName);
+
+        });
+
         categoryCard.appendChild(editCategoryButton);
 
         renderedCategories.appendChild(categoryCard);
