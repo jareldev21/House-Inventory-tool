@@ -7,3 +7,4 @@
 .form-group label { display: block; margin-bottom: .4rem; }
 .round-button { width: 100%; border-radius: 25px; }
 #message { margin-top: 1rem; font-size: .9rem; }
+.login-divider { text-align: center; margin: 1rem 0; }

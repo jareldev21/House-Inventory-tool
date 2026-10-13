@@ -18,6 +18,14 @@
 .filter-dot.low { background: var(--amber); }
 .filter-dot.unavailable { background: var(--red); }
 .inventorypage { min-width: 0; padding: 1.6rem clamp(16px, 2vw, 32px); }
+.inventory-connection { border: 1px solid var(--border); border-radius: 16px; padding: 1rem; margin-bottom: 1rem; background: var(--panel); }
+.inventory-connection h2 { font-size: 1.1rem; margin: 0; }
+.inventory-connection p { font-size: .85rem; margin-top: .6rem; }
+.connection-heading, .connection-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-bottom: .6rem; }
+.connection-heading { justify-content: space-between; }
+.connection-actions input { flex: 1 1 200px; }
+.connection-actions label { flex-basis: 100%; }
+#sharedInventoryId { font-family: monospace; font-size: .85rem; }
 .row1 { display: flex; flex-wrap: wrap; gap: .8rem; }
 .row1 input { flex: 1 1 220px; border-radius: 28px; }
 .row1 button { white-space: nowrap; }

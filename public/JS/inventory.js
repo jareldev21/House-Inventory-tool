@@ -3,6 +3,7 @@ import { auth, db } from './firebase.js';
 import { doc, getDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 import { normalizeCategories, stockStatus, parseStatus, matchesItem, inventoryVersion, categoryIcons, categoryIconKey } from './inventory-model.js';
+import { createSharedInventory, joinSharedInventory, selectPersonalInventory, parseInventoryId } from './inventory-sharing.js';
 
 // 2. DOM references and application state
 const byId = id => document.getElementById(id);
@@ -22,6 +23,7 @@ let activeFilter = 'all';
 let editingCategory = null;
 let editingItem = null;
 let originalItemCategory = null;
+let activeInventoryId = null;
 
 function message(text, error = false) {
     byId('inventoryMessage').textContent = text;
@@ -35,6 +37,12 @@ function updateControls() {
     byId('retryLoad').disabled = saving;
     document.querySelectorAll('dialog input, dialog select, dialog button').forEach(control => { control.disabled = saving; });
     document.querySelectorAll('dialog button[type="submit"]').forEach(control => { control.disabled = !ready || saving; });
+    byId('createSharedBtn').disabled = !ready || saving || Boolean(activeInventoryId);
+    byId('joinInventoryBtn').disabled = !currentUser || saving;
+    byId('joinInventoryId').disabled = !currentUser || saving;
+    byId('personalInventoryBtn').disabled = !currentUser || saving;
+    byId('refreshInventoryBtn').disabled = !currentUser || saving;
+    byId('copyInventoryId').disabled = !activeInventoryId || saving;
 }
 
 // 3. Authentication and loading. Ignore requests from a previous user session.
@@ -48,14 +56,22 @@ async function loadCategories() {
     message('Loading your inventory…');
     byId('retryLoad').hidden = true;
     try {
-        const snapshot = await getDoc(doc(db, 'users', user.uid));
+        const personal = await getDoc(doc(db, 'users', user.uid));
         if (requestSession !== session) return;
+        activeInventoryId = personal.exists() ? (personal.data().activeInventoryId ?? null) : null;
+        byId('activeInventoryLabel').textContent = activeInventoryId ? 'Shared inventory' : 'Personal inventory';
+        byId('sharedInventoryDetails').hidden = !activeInventoryId;
+        byId('personalInventoryBtn').hidden = !activeInventoryId;
+        byId('sharedInventoryId').value = activeInventoryId ?? '';
+        const snapshot = activeInventoryId ? await getDoc(doc(db, 'inventories', parseInventoryId(activeInventoryId))) : personal;
+        if (requestSession !== session) return;
+        if (activeInventoryId && (!snapshot.exists() || !snapshot.data().members?.includes(user.uid))) throw new Error('Inventory membership is unavailable.');
         const records = snapshot.exists() ? (snapshot.data().categories ?? []) : [];
         categories = normalizeCategories(records);
         savedVersion = inventoryVersion(records);
         ready = true;
         activeCategory = 'all';
-        message('Inventory loaded. Changes are saved to your account.');
+        message(activeInventoryId ? 'Inventory loaded. Changes are shared with everyone connected to this ID.' : 'Inventory loaded. Changes are saved to your account.');
     } catch (error) {
         if (requestSession !== session) return;
         console.error('Inventory load failed:', error);
@@ -70,6 +86,12 @@ onAuthStateChanged(auth, user => {
     currentUser = user;
     ready = false;
     saving = false;
+    activeInventoryId = null;
+    byId('sharedInventoryDetails').hidden = true;
+    byId('personalInventoryBtn').hidden = true;
+    byId('sharedInventoryId').value = '';
+    byId('joinInventoryId').value = '';
+    byId('activeInventoryLabel').textContent = 'Personal inventory';
     categories = [];
     activeCategory = 'all';
     activeFilter = 'all';
@@ -88,12 +110,12 @@ async function saveCategories(nextCategories) {
     const user = currentUser;
     const requestSession = session;
     const expectedVersion = savedVersion;
+    const reference = activeInventoryId ? doc(db, 'inventories', activeInventoryId) : doc(db, 'users', user.uid);
     saving = true;
     updateControls();
     message('Saving…');
     try {
         await runTransaction(db, async transaction => {
-            const reference = doc(db, 'users', user.uid);
             const snapshot = await transaction.get(reference);
             const stored = snapshot.exists() ? (snapshot.data().categories ?? []) : [];
             if (inventoryVersion(stored) !== expectedVersion) throw new Error('inventory-conflict');
@@ -109,7 +131,7 @@ async function saveCategories(nextCategories) {
         console.error('Inventory save failed:', error);
         if (requestSession !== session) return false;
         const conflict = error.message === 'inventory-conflict';
-        message(conflict ? 'Inventory changed in another tab. Close this form and reload inventory before editing again.' :
+        message(conflict ? 'Inventory changed in another tab or by another member. Close this form and refresh inventory before editing again.' :
             'Could not save. Your saved inventory is unchanged; check your connection or permissions and try again.', true);
         document.querySelectorAll('dialog[open] .form-error').forEach(element => {
             element.textContent = conflict ? 'Another tab changed your inventory. Close this form and reload inventory.' : 'Save failed. Your input is still here. Please try again.';
@@ -319,3 +341,42 @@ byId('logout-button').addEventListener('click', async () => {
     catch (error) { console.error(error); message('Could not sign out. Please try again.', true); }
 });
 renderCategories();
+
+// 8. Connecting inventories. Changing connections never merges or deletes personal items.
+async function changeInventory(action) {
+    if (!currentUser || saving) return;
+    const user = currentUser;
+    const requestSession = session;
+    saving = true;
+    updateControls();
+    message('Connecting inventory…');
+    try {
+        await action(user);
+        if (requestSession !== session) return;
+        saving = false;
+        await loadCategories();
+    } catch (error) {
+        if (requestSession !== session) return;
+        console.error('Inventory connection failed:', error);
+        message(error.code ? 'Could not connect. Check your connection and ensure shared-inventory access rules are configured.' : error.message, true);
+    } finally {
+        if (currentUser?.uid === user.uid) { saving = false; updateControls(); }
+    }
+}
+
+byId('createSharedBtn').addEventListener('click', () => {
+    if (!ready || activeInventoryId || saving) return;
+    if (!window.confirm('Create a shared copy of your personal inventory? Anyone signed in with its inventory ID can join and edit it. Your personal inventory will stay separate.')) return;
+    changeInventory(user => createSharedInventory(user, savedVersion));
+});
+byId('joinInventoryForm').addEventListener('submit', event => {
+    event.preventDefault();
+    const id = byId('joinInventoryId').value;
+    changeInventory(user => joinSharedInventory(user, id));
+});
+byId('personalInventoryBtn').addEventListener('click', () => changeInventory(selectPersonalInventory));
+byId('refreshInventoryBtn').addEventListener('click', loadCategories);
+byId('copyInventoryId').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(activeInventoryId); message('Inventory ID copied. Share it only with people you want to edit this inventory.'); }
+    catch { byId('sharedInventoryId').select(); message('Select and copy the inventory ID shown above.'); }
+});

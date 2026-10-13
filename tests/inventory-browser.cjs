@@ -206,6 +206,39 @@ const mock = name => fs.readFileSync(path.join(__dirname,name+'.mock.js'),'utf8'
   await page.locator('#password').fill('test-password');
   await page.getByRole('button',{name:'Login',exact:true}).click();
   await page.waitForURL('**/home.html');
+  // Connect two authenticated users to one shared inventory without merging personal data.
+  await page.goto('http://127.0.0.1:4173/HTML/inventory.html');
+  await page.getByRole('heading',{name:'Other tab',exact:true}).waitFor();
+  const personalBefore = await page.evaluate(()=>JSON.parse(localStorage.getItem('test-doc-test-user')).categories);
+  await page.locator('#createSharedBtn').click();
+  await page.getByRole('heading',{name:'Shared inventory',exact:true}).waitFor();
+  const sharedId = await page.locator('#sharedInventoryId').inputValue();
+  assert.match(sharedId,/^[a-f0-9]{32}$/);
+  await page.reload();
+  await page.getByRole('heading',{name:'Shared inventory',exact:true}).waitFor();
+  assert.equal(await page.locator('#sharedInventoryId').inputValue(),sharedId);
+  await page.evaluate(()=>{localStorage.setItem('test-user',JSON.stringify({uid:'second-user'}));window.authCallback({uid:'second-user'});});
+  await page.getByText('Make room for a little order.',{exact:false}).waitFor();
+  await page.locator('#joinInventoryId').fill('bad-id');
+  await page.locator('#joinInventoryBtn').click();
+  await page.getByText('Enter the complete 32-character inventory ID.',{exact:true}).waitFor();
+  await page.locator('#joinInventoryId').fill('0'.repeat(32));
+  await page.locator('#joinInventoryBtn').click();
+  await page.getByText('No inventory matches that ID.',{exact:false}).waitFor();
+  await page.locator('#joinInventoryId').fill(sharedId);
+  await page.locator('#joinInventoryBtn').click();
+  await page.getByRole('heading',{name:'Other tab',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Edit Legacy Rice',exact:true}).click();
+  await page.locator('#itemStatus').selectOption('available');
+  await page.getByRole('button',{name:'Save Item',exact:true}).click();
+  await page.locator('#itemModal').waitFor({state:'hidden'});
+  await page.evaluate(()=>{localStorage.setItem('test-user',JSON.stringify({uid:'test-user'}));window.authCallback({uid:'test-user'});});
+  await page.locator('.item-card').filter({hasText:'Legacy Rice'}).getByText('Available',{exact:true}).waitFor();
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('test-doc-test-user')).categories),personalBefore);
+  await page.locator('#personalInventoryBtn').click();
+  await page.getByRole('heading',{name:'Personal inventory',exact:true}).waitFor();
+  await page.locator('.item-card').filter({hasText:'Legacy Rice'}).getByText('Unavailable',{exact:true}).waitFor();
+  await page.goto('http://127.0.0.1:4173/HTML/home.html');
   for(const [link,url] of [['Open To-do List','todos.html'],['Find/Add Places','placestogo.html']]) {
    await page.getByRole('link',{name:link}).click();
    await page.waitForURL('**/'+url);
@@ -222,8 +255,16 @@ const mock = name => fs.readFileSync(path.join(__dirname,name+'.mock.js'),'utf8'
     assert.deepEqual(brokenImages,[]);
    }
   }
+  await page.goto('http://127.0.0.1:4173/HTML/index.html');
+  await page.evaluate(()=>localStorage.setItem('test-google-error','auth/popup-closed-by-user'));
+  await page.locator('#google-sign-in').click();
+  await page.getByText('Google sign-in was cancelled.',{exact:false}).waitFor();
+  assert.equal(await page.locator('#google-sign-in').isEnabled(),true);
+  await page.evaluate(()=>localStorage.removeItem('test-google-error'));
+  await page.locator('#google-sign-in').click();
+  await page.waitForURL('**/home.html');
   assert.deepEqual(errors,[]);
-  console.log('PASS: mocked login, category/item CRUD, migration, manual statuses, search/filters, reload, save/load failures, stale-tab protection, user isolation, logout/login, placeholders, 4 responsive widths; no uncaught page errors.');
+  console.log('PASS: mocked Google/password login, shared inventory creation/join/edit, personal preservation, category/item CRUD, manual statuses, reload, save/load failures, stale-tab protection, user isolation, placeholders, responsive layouts; no uncaught page errors.');
  } finally { await browser?.close(); server.close(); }
 })().catch(error=>{console.error(error);process.exitCode=1;});
 

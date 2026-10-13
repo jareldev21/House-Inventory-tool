@@ -2,6 +2,8 @@
 
 This is the existing HTML, CSS, vanilla JavaScript, Firebase Authentication, and Cloud Firestore app. No framework or production dependency was added. Nothing was deployed, and verification did not access or modify live user data.
 
+Google sign-in and shared inventories are now implemented. See [Firebase setup and sharing instructions](FIREBASE_SETUP.md) for the required Google provider configuration, new access rules, emulator testing, and deployment commands. Those live setup steps have not been performed.
+
 ## What changed
 
 - `public/CSS/main.css`: shared theme variables, reset, typography, header/navigation, branding, buttons, inputs, dialogs, and placeholder styles.
@@ -22,7 +24,7 @@ The inventory follows the supplied reference's purple category cards, item rows,
 
 Category icons can be selected in Add Category or Edit Category: Storage, Kitchen, Bedroom, Living Room, Bathroom, Food, Cleaning, or Tools. The selection is stored as the category's `icon` key and displayed on its card and in the sidebar. Existing categories without an icon keep the storage icon. Cancelling does not change the saved selection; failed saves retain the selected icon for retry. All icon assets are bundled SVGs; no image uploads or external icon library are needed.
 
-Documents remain at `users/{authenticatedUser.uid}`. A category now has a stable `id`, `name`, and `items` array. An item looks like this:
+Personal documents remain at `users/{authenticatedUser.uid}`. Optional shared inventories use `inventories/{inventoryId}`, with the active ID saved on the private user document. Creating a shared inventory copies personal categories and leaves the original intact. A category has a stable `id`, `name`, and `items` array. An item looks like this:
 
 ```json
 {
@@ -63,7 +65,7 @@ Mock tests verify frontend behavior, not the deployed Firebase service or Securi
 ## Before deployment
 
 1. Verify the Firebase target: the app uses `jareljaz-house`, but `.firebaserc` defaults to `first-website-481df`. Neither value was changed. Select the intended project explicitly when you eventually deploy.
-2. Verify deployed Firestore Rules. No rules file is present in this repository. Rules must require authentication and enforce `request.auth.uid == userId` on reads and writes under `users/{userId}`. Client-side UID selection is not security enforcement. Check unauthenticated and cross-user requests are denied, and validate the allowed inventory shape/fields according to your rules strategy. Ensure item objects, IDs, the status field, preserved legacy quantities, category icons, and any preserved historical fields are accepted.
+2. Review, emulator-test, and deploy the new `firestore.rules` before using sharing. See `FIREBASE_SETUP.md`. Personal user documents remain private; shared IDs intentionally grant signed-in holders read/join access, while content edits require membership. Client-side checks alone are not security enforcement. The local rules test is provided but has not been executed because a Java/Firestore emulator runtime is unavailable here.
 3. Test real login, create/edit/delete, refresh, sign-out/sign-in, and user isolation with a nonproduction account. Confirm the intended hosting domain is authorized for Firebase Authentication.
 4. Keep a recoverable export before any production migration or deployment. This task neither exported nor changed live data.
 
