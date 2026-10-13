@@ -102,6 +102,11 @@
 
                     <input type="text" id="itemName" placeholder="Example: Rice">
 
+                    <label for="itemQuantity">>Current Quantity</label>
+                    <input type="number" id="itemQuantity" min="0" step="1" required>
+                    <label for="itemMaxQuantity"></label>
+                    <input type="number" id="itemMaxQuantity" min="1" step="1" required>
+
                     <div class="modal-buttons">
                         
                         <button type="button" id="cancelItem">Cancel</button>
@@ -115,13 +120,3 @@
         </body>
 
         <footer></footer>
-
-
-        <!--
-        
-        To do's:
-        
-        - Change the Last section element to a dialog element after editing 
-        
-        
-        -->

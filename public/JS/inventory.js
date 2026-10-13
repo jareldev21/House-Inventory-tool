@@ -160,10 +160,7 @@ function renderCategories() {
 
             console.log(updatedCategoryName);
 
-            if (updatedCategoryName === null || updatedCategoryName.trim() === '') {
-
-                return;
-            }
+            if (updatedCategoryName === null || updatedCategoryName.trim() === '') {return;};
 
             category.name = updatedCategoryName.trim();
 
