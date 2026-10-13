@@ -1,24 +1,5 @@
-import { initializeApp } from
-"https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-
-import {
-    getAuth,
-    signInWithEmailAndPassword
-} from
-"https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyAUiAsV7mLbwgAedq6KPafjLOwrNYFKyYw",
-    authDomain: "jareljaz-house.firebaseapp.com",
-    projectId: "jareljaz-house",
-    storageBucket: "jareljaz-house.firebasestorage.app",
-    messagingSenderId: "127422481122",
-    appId: "1:127422481122:web:1bd6dcbdeddc1a21b954bb",
-    measurementId: "G-4ZHJCZWS1T"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+import { auth } from './firebase.js';
+import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 
 const loginForm = document.getElementById("login-form");
 
@@ -50,7 +31,7 @@ loginForm.addEventListener("submit", async function(event) {
 
         console.error(error);
 
-        message.textContent = "Incorrect email or password.";
+        message.textContent = "Unable to sign in. Check your email, password, and connection, then try again.";
 
     }
 

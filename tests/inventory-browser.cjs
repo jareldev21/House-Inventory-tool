@@ -1,0 +1,229 @@
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { serve } = require('./serve.cjs');
+const initial = { categories: [{name:'Kitchen', items:['Legacy Rice', {id:'pan',name:'Frying Pan',currentQuantity:4,maxQuantity:8},{id:'mug',name:'Coffee Mug',currentQuantity:1,maxQuantity:5},{id:'plates',name:'Plates',currentQuantity:0,maxQuantity:8}]}], profile:{nickname:'Keep me'} };
+const mock = name => fs.readFileSync(path.join(__dirname,name+'.mock.js'),'utf8');
+(async () => {
+ const server = serve();
+ let browser;
+ try {
+  browser = await chromium.launch({channel:'msedge',headless:true});
+  const context = await browser.newContext({viewport:{width:1440,height:1000}});
+  const routeRequests = async route => {
+   const url = route.request().url();
+   if(url.endsWith('/JS/firebase.js')) return route.fulfill({contentType:'text/javascript',body:mock('firebase')});
+   if(url.includes('firebase-auth.js')) return route.fulfill({contentType:'text/javascript',body:mock('auth')});
+   if(url.includes('firebase-firestore.js')) return route.fulfill({contentType:'text/javascript',body:mock('firestore')});
+   if(!url.startsWith('http://127.0.0.1:4173/')) return route.abort();
+   return route.continue();
+  };
+  await context.route('**/*', routeRequests);
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.goto('http://127.0.0.1:4173/HTML/index.html');
+  await page.evaluate(value=>localStorage.setItem('test-doc-test-user',JSON.stringify(value)),initial);
+  await page.locator('#email').fill('test@example.com');
+  await page.locator('#password').fill('test-password');
+  await page.getByRole('button',{name:'Login',exact:true}).click();
+  await page.waitForURL('**/home.html');
+  await page.getByRole('link',{name:'Open Inventory'}).click();
+  await page.getByText('Inventory loaded.',{exact:false}).waitFor();
+  assert.equal(await page.locator('.item-card').count(),4);
+  await page.getByText('Edit to choose a stock status.',{exact:true}).waitFor();
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('test-doc-test-user'))), initial, 'Loading must not write migration');
+  assert.ok((await page.locator('.category-heading img').first().getAttribute('src')).endsWith('/inventory.svg'));
+  await page.getByRole('button',{name:'Edit category Kitchen',exact:true}).click();
+  assert.equal(await page.getByRole('radio',{name:'Storage',exact:true}).isChecked(),true);
+  await page.getByRole('radio',{name:'Kitchen',exact:true}).check();
+  await page.locator('#cancelCategory').click();
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('test-doc-test-user'))),initial,'Cancelling icon edits must not save');
+  for(const [filter,count] of [['available',1],['low',1],['unavailable',1],['all',4]]) {
+   await page.locator('[data-filter="'+filter+'"]').click();
+   assert.equal(await page.locator('.item-card').count(),count);
+  }
+  await page.locator('#search').fill('FRYING');
+  assert.equal(await page.locator('.item-card').count(),1);
+  await page.locator('#search').fill('no match');
+  await page.getByText('No items match your search and filters.').waitFor();
+  await page.locator('#search').fill('');
+  await page.locator('#addCategoryTopBtn').click();
+  await page.locator('#categoryName').fill('Bedroom');
+  await page.getByRole('radio',{name:'Bedroom',exact:true}).check();
+  await page.getByRole('button',{name:'Save Category',exact:true}).click();
+  await page.locator('#categoryModal').waitFor({state:'hidden'});
+  await page.locator('#addItemBtn').click();
+  await page.locator('#itemCategory').selectOption({label:'Bedroom'});
+  await page.locator('#itemName').fill('Pillow');
+  await page.getByRole('button',{name:'Save Item',exact:true}).click();
+  assert.equal(await page.locator('#itemModal').isVisible(),true);
+  assert.equal(await page.locator('#itemStatus').evaluate(select=>select.validity.valueMissing),true);
+  assert.equal(await page.locator('#itemUnit').count(),0);
+  assert.equal(await page.locator('.item-unit').count(),0);
+  assert.equal(await page.locator('#itemStatus').inputValue(),'');
+  assert.equal(await page.locator('#itemForm input[type=number]').count(),0);
+  await page.locator('#itemStatus').selectOption('available');
+
+  await page.getByRole('button',{name:'Save Item',exact:true}).click();
+  await page.locator('#itemModal').waitFor({state:'hidden'});
+  await page.locator('.item-card').filter({hasText:'Pillow'}).getByText('Available',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Edit Pillow',exact:true}).click();
+  await page.locator('#itemName').fill('Pillow cases');
+  await page.locator('#itemStatus').selectOption('low');
+  await page.getByRole('button',{name:'Save Item',exact:true}).click();
+  await page.locator('#itemModal').waitFor({state:'hidden'});
+  assert.equal(await page.locator('.item-card').filter({hasText:'Pillow cases'}).locator('.stock-badge').innerText(),'Low Stock');
+  await page.reload();
+  await page.getByText('Pillow cases',{exact:true}).waitFor();
+  await page.locator('.item-card').filter({hasText:'Pillow cases'}).getByText('Low Stock',{exact:true}).waitFor();
+  assert.ok((await page.locator('.category-card').filter({hasText:'Bedroom'}).locator('.category-icon').getAttribute('src')).endsWith('/bedroom.svg'));
+  const saved = await page.evaluate(()=>JSON.parse(localStorage.getItem('test-doc-test-user')));
+  assert.equal(saved.profile.nickname,'Keep me');
+  assert.equal(saved.categories[0].items[0].currentQuantity,null);
+  assert.ok(saved.categories[0].items[0].id);
+  assert.equal(saved.categories[1].icon,'bedroom');
+  assert.equal(saved.categories[1].items[0].status,'low');
+  assert.equal(saved.categories[1].items[0].currentQuantity,undefined);
+  assert.equal(saved.categories[0].items[1].currentQuantity,4,'Keep legacy amounts intact');
+  await page.getByRole('button',{name:'Edit Legacy Rice',exact:true}).click();
+  await page.locator('#itemStatus').selectOption('unavailable');
+
+  await page.evaluate(()=>localStorage.setItem('test-save-fail','1'));
+  await page.getByRole('button',{name:'Save Item',exact:true}).click();
+  await page.locator('#itemError').filter({hasText:'Save failed'}).waitFor();
+  assert.equal(await page.locator('#itemStatus').inputValue(),'unavailable');
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('test-doc-test-user'))),saved);
+  await page.evaluate(()=>localStorage.removeItem('test-save-fail'));
+  await page.getByRole('button',{name:'Save Item',exact:true}).click();
+  await page.locator('#itemModal').waitFor({state:'hidden'});
+  await page.locator('.item-card').filter({hasText:'Legacy Rice'}).getByText('Unavailable',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Edit category Bedroom',exact:true}).click();
+  assert.equal(await page.getByRole('radio',{name:'Bedroom',exact:true}).isChecked(),true);
+  await page.getByRole('radio',{name:'Living Room',exact:true}).check();
+  await page.locator('#categoryName').fill('Guest Bedroom');
+  await page.evaluate(()=>localStorage.setItem('test-save-fail','1'));
+  await page.getByRole('button',{name:'Save Category',exact:true}).click();
+  await page.locator('#categoryError').filter({hasText:'Save failed'}).waitFor();
+  assert.equal(await page.getByRole('radio',{name:'Living Room',exact:true}).isChecked(),true);
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('test-doc-test-user')).categories[1].icon),'bedroom');
+  await page.evaluate(()=>localStorage.removeItem('test-save-fail'));
+  await page.getByRole('button',{name:'Save Category',exact:true}).click();
+  await page.locator('#categoryModal').waitFor({state:'hidden'});
+  await page.reload();
+  await page.getByRole('heading',{name:'Guest Bedroom',exact:true}).waitFor();
+  assert.ok((await page.locator('.category-card').filter({hasText:'Guest Bedroom'}).locator('.category-icon').getAttribute('src')).endsWith('/living-room.svg'));
+  assert.ok((await page.getByRole('button',{name:'Guest Bedroom 1',exact:true}).locator('img').getAttribute('src')).endsWith('/living-room.svg'));
+  await page.getByRole('button',{name:'Guest Bedroom 1',exact:true}).click();
+  assert.equal(await page.locator('.item-card').count(),1);
+  await page.getByRole('button',{name:'All Items 5',exact:true}).click();
+  for(const width of [768,390,320]) {
+   await page.setViewportSize({width,height:800});
+   await page.locator('#addItemBtn').click();
+   assert.ok(await page.locator('#itemModal').evaluate(dialog=>dialog.scrollWidth<=dialog.clientWidth), 'Item dialog overflow at '+width);
+   await page.locator('#cancelItem').click();
+   await page.getByRole('button',{name:'Edit category Guest Bedroom',exact:true}).click();
+   assert.ok(await page.locator('#categoryModal').evaluate(dialog=>dialog.scrollWidth<=dialog.clientWidth), 'Category icon picker overflow at '+width);
+   await page.locator('#cancelCategory').click();
+  }
+  const artifactDir = path.join(__dirname,'artifacts');
+  fs.mkdirSync(artifactDir,{recursive:true});
+  await page.setViewportSize({width:390,height:850});
+  await page.getByRole('button',{name:'Edit category Guest Bedroom',exact:true}).click();
+  await page.screenshot({path:path.join(artifactDir,'category-icon-picker.png')});
+  await page.locator('#cancelCategory').click();
+  for(const width of [1440,768,390,320]) {
+   await page.setViewportSize({width,height:1000});
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth), 'Inventory overflow at '+width);
+   await page.screenshot({path:path.join(artifactDir,'inventory-'+width+'.png'),fullPage:true});
+  }
+  page.on('dialog',dialog=>dialog.accept());
+  await page.setViewportSize({width:1440,height:1000});
+  await page.locator('#addItemBtn').hover();
+  await page.waitForFunction(()=>Number(getComputedStyle(document.getElementById('addItemBtn')).transform.match(/matrix\(([^,]+)/)?.[1]) > 1.02);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  assert.equal(await page.locator('#addItemBtn').evaluate(button=>getComputedStyle(button).transform),'none');
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  const mobile = await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+  await mobile.route('**/*',routeRequests);
+  const mobilePage = await mobile.newPage();
+  mobilePage.on('pageerror',error=>errors.push(error.message));
+  await mobilePage.goto('http://127.0.0.1:4173/HTML/index.html');
+  await mobilePage.evaluate(value=>localStorage.setItem('test-doc-test-user',JSON.stringify(value)),initial);
+  await mobilePage.goto('http://127.0.0.1:4173/HTML/inventory.html');
+  await mobilePage.getByText('Inventory loaded.',{exact:false}).waitFor();
+  for(const [width,height] of [[320,568],[390,844],[768,1024],[844,390]]) {
+   await mobilePage.setViewportSize({width,height});
+   assert.ok(await mobilePage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Touch layout overflow at '+width);
+   for(const selector of ['.item-actions button','.filters-options button']) {
+    assert.ok(await mobilePage.locator(selector).evaluateAll(buttons=>buttons.every(button=>button.getBoundingClientRect().height>=44)),'Touch targets too small');
+   }
+   await mobilePage.locator('#addItemBtn').tap();
+   assert.ok(await mobilePage.locator('#itemModal').evaluate(dialog=>dialog.scrollWidth<=dialog.clientWidth && dialog.getBoundingClientRect().height<=innerHeight),'Mobile item dialog bounds');
+   await mobilePage.locator('#cancelItem').tap();
+   await mobilePage.locator('#addCategoryTopBtn').tap();
+   assert.ok(await mobilePage.locator('#categoryModal').evaluate(dialog=>dialog.scrollWidth<=dialog.clientWidth && dialog.getBoundingClientRect().height<=innerHeight),'Mobile category dialog bounds');
+   await mobilePage.locator('#cancelCategory').tap();
+  }
+  await mobilePage.setViewportSize({width:390,height:844});
+  await mobilePage.locator('#addItemBtn').tap();
+  await mobilePage.screenshot({path:path.join(artifactDir,'status-form-mobile.png')});
+  assert.equal(await mobilePage.locator('#addItemBtn').evaluate(button=>getComputedStyle(button).transform),'none');
+  await mobile.close();
+  await page.getByRole('button',{name:'Remove Pillow cases',exact:true}).click();
+  await page.getByRole('button',{name:'Remove Pillow cases',exact:true}).waitFor({state:'hidden'});
+  await page.getByRole('button',{name:'Delete category Guest Bedroom',exact:true}).click();
+  await page.getByRole('heading',{name:'Guest Bedroom',exact:true}).waitFor({state:'hidden'});
+  await page.evaluate(()=>{
+   const key='test-doc-test-user';const value=JSON.parse(localStorage.getItem(key));
+   value.categories[0].name='Other tab';localStorage.setItem(key,JSON.stringify(value));
+  });
+  await page.locator('#addCategoryTopBtn').click();
+  await page.locator('#categoryName').fill('Should not save');
+  await page.getByRole('button',{name:'Save Category',exact:true}).click();
+  await page.locator('#categoryError').filter({hasText:'Another tab'}).waitFor();
+  await page.locator('#cancelCategory').click();
+  await page.locator('#retryLoad').click();
+  await page.getByRole('heading',{name:'Other tab',exact:true}).waitFor();
+  await page.locator('.item-card').filter({hasText:'Legacy Rice'}).getByText('Unavailable',{exact:true}).waitFor();
+  assert.equal(await page.getByRole('heading',{name:'Should not save',exact:true}).count(),0);
+  await page.evaluate(()=>localStorage.setItem('test-load-fail','1'));
+  await page.reload();
+  await page.locator('#retryLoad').waitFor();
+  assert.equal(await page.locator('#addCategoryTopBtn').isDisabled(),true);
+  await page.evaluate(()=>localStorage.removeItem('test-load-fail'));
+  await page.locator('#retryLoad').click();
+  await page.getByRole('heading',{name:'Other tab',exact:true}).waitFor();
+  await page.evaluate(()=>{localStorage.setItem('test-user',JSON.stringify({uid:'second-user'}));window.authCallback({uid:'second-user'});});
+  await page.getByText('Make room for a little order.',{exact:false}).waitFor();
+  assert.equal(await page.locator('.item-card').count(),0);
+  await page.evaluate(()=>{localStorage.setItem('test-user',JSON.stringify({uid:'test-user'}));window.authCallback({uid:'test-user'});});
+  await page.getByRole('heading',{name:'Other tab',exact:true}).waitFor();
+  await page.locator('#logout-button').click();
+  await page.waitForURL('**/index.html');
+  await page.locator('#email').fill('test@example.com');
+  await page.locator('#password').fill('test-password');
+  await page.getByRole('button',{name:'Login',exact:true}).click();
+  await page.waitForURL('**/home.html');
+  for(const [link,url] of [['Open To-do List','todos.html'],['Find/Add Places','placestogo.html']]) {
+   await page.getByRole('link',{name:link}).click();
+   await page.waitForURL('**/'+url);
+   await page.getByRole('heading',{name:'Page Not Found'}).waitFor();
+   await page.getByRole('link',{name:'Return to homepage'}).click();
+   await page.waitForURL('**/home.html');
+  }
+  for(const file of ['home.html','index.html','todos.html','placestogo.html','404.html']) {
+   for(const width of [1440,768,390,320]) {
+    await page.setViewportSize({width,height:1000});
+    await page.goto('http://127.0.0.1:4173/HTML/'+file);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),file+' overflow at '+width);
+    const brokenImages=await page.locator('img').evaluateAll(images=>images.filter(image=>image.complete && !image.naturalWidth).map(image=>image.src));
+    assert.deepEqual(brokenImages,[]);
+   }
+  }
+  assert.deepEqual(errors,[]);
+  console.log('PASS: mocked login, category/item CRUD, migration, manual statuses, search/filters, reload, save/load failures, stale-tab protection, user isolation, logout/login, placeholders, 4 responsive widths; no uncaught page errors.');
+ } finally { await browser?.close(); server.close(); }
+})().catch(error=>{console.error(error);process.exitCode=1;});
+

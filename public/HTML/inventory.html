@@ -1,122 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Home Page</title>
-            <link rel="stylesheet" href="../CSS/Inventory.css">
-            <link rel="icon" type="image/png" href="../FIles/Home1.png">
-            <script type="module" src="../JS/inventory.js"></script>
-    </head>
-    <body>
-        <header>
-            <div class="logo-area">
-                <img src="../FIles/Home1.png" alt="Logo" class="Herologo">
-                <h1>Our Home Hub</h1>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Inventory | Our Home Hub</title>
+    <link rel="stylesheet" href="../CSS/main.css">
+    <link rel="stylesheet" href="../CSS/Inventory.css">
+    <link rel="icon" type="image/svg+xml" href="../Files/branding/logo.svg">
+    <script type="module" src="../JS/inventory.js"></script>
+</head>
+<body>
+    <header>
+        <a class="logo-area" href="home.html"><img src="../Files/branding/logo.svg" alt="" class="Herologo"><span>Our Home Hub</span></a>
+        <nav class="navigationlinks" aria-label="Main navigation">
+            <a href="home.html" class="nav-link">Home</a>
+            <a href="inventory.html" class="nav-link" aria-current="page">Inventory</a>
+            <a href="todos.html" class="nav-link">To Do's</a>
+            <a href="placestogo.html" class="nav-link">Places to Go</a>
+            <button id="logout-button" type="button">Logout</button>
+        </nav>
+    </header>
+    <section class="hero" aria-labelledby="pageTitle">
+        <p class="eyebrow">Organize today</p>
+        <h1 id="pageTitle">Inventory</h1>
+        <p>Keep track of your household items.</p>
+    </section>
+    <main class="wholepage">
+        <aside class="left-panel" aria-label="Inventory navigation and filters">
+            <div class="sidebar"><h2>Inventory</h2><p>Organize, track and manage your household items.</p></div>
+            <div class="inventory-categories" id="categoryList"></div>
+            <div class="filters"><h2>Quick Filters</h2></div>
+            <div class="filters-options" aria-label="Filter by stock status">
+                <button type="button" data-filter="all" aria-pressed="true"><span class="filter-dot"></span>All Items</button>
+                <button type="button" data-filter="available" aria-pressed="false"><span class="filter-dot available"></span>Available</button>
+                <button type="button" data-filter="low" aria-pressed="false"><span class="filter-dot low"></span>Low Stock</button>
+                <button type="button" data-filter="unavailable" aria-pressed="false"><span class="filter-dot unavailable"></span>Unavailable</button>
             </div>
-            <nav class="navigationlinks">
-                <a href="home.html" class="nav-link">Home</a>
-                <a href="inventory.html" class="nav-link homenav">Inventory</a>
-                <a href="404.html" class="nav-link">To Do's</a>
-                <a href="404.html" class="nav-link">Places to Go</a>
-                <button id="logout-button">Logout</button>
-            </nav>
-        </header>
-         <main class="wholepage">
-            <aside class="left-panel">
-                <div class="sidebar">
-                    <h1>Inventory</h1>
-                    <p>Organize, track and manage your household items</p>
-                </div>
-                <div class="inventory-categories" id="categoryList">
-                    <button id="allItemsBtn">All Items</button>    
-                </div>
-                <div class="filters">
-                    <h1>Quick Filters</h1>
-                </div>
-                <div class="filters-options">
-                        <button>All Items</button>
-                        <button>Available</button>
-                        <button>Low stock</button>
-                        <button>Unavailable</button>                       
-                </div>
-            </aside>
-            <section class="inventorypage">
-                <div class="row1">     
-                    <input type="search" id="search">
-                    <button id="addCategoryTopBtn">Add Category</button>
-                    <button id="addItemBtn">Add item</button>                   
-                </div>
-                <div class="row2">        
-                <h1>Your items</h1>
-                <p>View, add, and manage your household inventory.</p>
-
-                </div>
-
-                <article class="categorycards" id="categoryCards">
-
-                    <div id="card1" >
-            
-                        <button id="addCategoryCardBtn">Add Category</button>
-
-                    </div>
-
-                    <div id="renderedCategories"></div>
-
-                </article>
-
-            </section>
-                
-            </main>
-
-            <!-- The Pop-up that shows up when you click add category -->
-            <dialog id="categoryModal">
-                <form id="categoryForm">
-
-                    <h2>Add Category</h2>
-
-                    <p>Create a new category for your inventory.</p>
-
-                    <label for="categoryName">Category Name</label>
-
-                    <input type="text" id="categoryName" placeholder="Example: Food">
-
-                    <div class="modal-buttons">
-                        
-                        <button type="button" id="cancelCategory">Cancel</button>
-                        <button type="submit">Add Category</button>
-                    </div>
-
-                </form>
-
-            </dialog>
-
-            <dialog id="itemModal">
-                <form id="itemForm">
-
-                    <h2>Add Item</h2>
-
-                    <p>Add a new item to this category.</p>
-
-                    <label for="itemName">Item Name</label>
-
-                    <input type="text" id="itemName" placeholder="Example: Rice">
-
-                    <label for="itemQuantity">Current Quantity:</label>
-                    <input type="number" id="itemQuantity" min="0" step="1" required>
-                    <label for="itemMaxQuantity">Max Quantity:</label>
-                    <input type="number" id="itemMaxQuantity" min="1" step="1" required>
-
-                    <div class="modal-buttons">
-                        
-                        <button type="button" id="cancelItem">Cancel</button>
-                        <button type="submit">Add Item</button>
-                    </div>
-
-                </form>
-
-            </dialog>
-
-        </body>
-
-        <footer></footer>
+        </aside>
+        <section class="inventorypage" aria-labelledby="itemsTitle">
+            <div class="row1">
+                <input type="search" id="search" aria-label="Search inventory items" placeholder="Search for items…">
+                <button type="button" id="addCategoryTopBtn" data-mutation disabled>+ Add Category</button>
+                <button type="button" id="addItemBtn" class="primary" data-mutation disabled>+ Add Item</button>
+            </div>
+            <p id="inventoryMessage" class="save-status" role="status" aria-live="polite">Connecting to your account…</p>
+            <button type="button" id="retryLoad" hidden>Reload inventory</button>
+            <div class="row2">
+                <div><h2 id="itemsTitle">Your Items</h2><p>View, add, and manage your household inventory.</p></div>
+                <p id="itemCount" aria-live="polite"></p>
+            </div>
+            <p id="emptyState" hidden></p>
+            <div class="categorycards" id="categoryCards">
+                <div id="renderedCategories"></div>
+                <section class="new-category">
+                    <h2>Add a New Category</h2><p>Create a category to keep your items organized.</p>
+                    <button type="button" id="addCategoryCardBtn" data-mutation disabled>+ Add Category</button>
+                </section>
+            </div>
+        </section>
+    </main>
+    <dialog id="categoryModal" aria-labelledby="categoryTitle">
+        <form id="categoryForm">
+            <h2 id="categoryTitle">Add Category</h2><p>Give your household items a home.</p>
+            <label for="categoryName">Category name</label>
+            <input type="text" id="categoryName" placeholder="Example: Kitchen" maxlength="120" required>
+            <fieldset class="category-icon-picker">
+                <legend>Category icon</legend>
+                <div id="categoryIconOptions" class="category-icon-options"></div>
+            </fieldset>
+            <p class="form-error" id="categoryError" role="alert"></p>
+            <div class="modal-buttons"><button type="button" id="cancelCategory">Cancel</button><button type="submit" class="primary" data-mutation>Save Category</button></div>
+        </form>
+    </dialog>
+    <dialog id="itemModal" aria-labelledby="itemTitle">
+        <form id="itemForm">
+            <h2 id="itemTitle">Add Item</h2>
+            <label for="itemCategory">Category</label><select id="itemCategory" required></select>
+            <label for="itemName">Item name</label><input type="text" id="itemName" placeholder="Example: Rice" maxlength="200" required>
+            <label for="itemStatus">Stock status</label>
+            <select id="itemStatus" required aria-describedby="statusHint">
+                <option value="" disabled>Choose a status</option>
+                <option value="available">Available</option>
+                <option value="low">Low Stock</option>
+                <option value="unavailable">Unavailable</option>
+            </select>
+            <p class="form-hint" id="statusHint">Available: more than 20% left. Low Stock: some left, but 20% or below. Unavailable: none left (0). Choose the status that best matches your stock.</p>
+            <p class="form-error" id="itemError" role="alert"></p>
+            <div class="modal-buttons"><button type="button" id="cancelItem">Cancel</button><button type="submit" class="primary" data-mutation>Save Item</button></div>
+        </form>
+    </dialog>
+</body>
+</html>

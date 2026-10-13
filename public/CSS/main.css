@@ -1,102 +1,72 @@
-* {
-    box-sizing: border-box;
-    
-} 
-
-html, body {
-    margin: 0;
-    width: 100%;
-    min-height: 100%;
-    font-family: sans-serif;
-
+/* Shared theme, layout, navigation, and form controls. */
+:root {
+    color-scheme: dark;
+    --background: #19112f;
+    --panel: #291e46;
+    --text: #f5f0ff;
+    --muted: #c0afd9;
+    --accent: #b88afa;
+    --border: #624586;
+    --green: #93e5ad;
+    --amber: #ffd183;
+    --red: #ff9fb6;
 }
-
-header {
-    position: sticky;
-    top: 0;
-    z-index: 999;
-
-    display: flex;
-    width: 100%;
-    justify-content: space-between;
-    align-items: center;
-
-    padding: 5px clamp(15px, 3vw, 35px);
-    background-color: rgb(40, 10, 80);
-    color: white;
-
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-
-    border-bottom: 1px solid rgba(29, 11, 11, 0.219);
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; font-family: "Segoe UI", Arial, sans-serif; line-height: 1.5; background: var(--background); color: var(--text); }
+h1, h2, h3, p { margin: 0 0 .6rem; }
+h1, h2, h3 { line-height: 1.25; overflow-wrap: anywhere; }
+p { color: var(--muted); }
+a { color: inherit; }
+button, input, select { font: inherit; }
+button, .card-button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 42px; padding: .55rem 1rem; border: 1px solid var(--border); border-radius: 12px; background: #43286c; color: var(--text); cursor: pointer; text-decoration: none; }
+button:hover, .card-button:hover { background: #583686; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+/* Zoom only with a mouse/trackpad; avoid sticky hover on touch screens. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    button, .card-button, .nav-link, .feature-card, .category-card, .category-icon-option { transition: transform .18s ease, background-color .18s ease; }
+    button:not(:disabled):hover, .card-button:hover, .nav-link:hover, .category-icon-option:hover { transform: scale(1.04); }
+    .feature-card:hover, .category-card:hover { transform: scale(1.015); }
 }
-
-header h1 {
-    font-size: clamp(19px, 2vw, 25px);
+button.primary, #logout-button, .round-button { background: #f2eaff; color: #542099; font-weight: 600; }
+button.primary:hover, #logout-button:hover, .round-button:hover { background: #d9c2ff; }
+input, select { width: 100%; min-width: 0; min-height: 44px; padding: .65rem .9rem; border: 1px solid var(--border); border-radius: 12px; background: #281d43; color: var(--text); }
+input::placeholder { color: var(--muted); opacity: 1; }
+:focus-visible { outline: 3px solid #d4b4ff; outline-offset: 3px; }
+header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .6rem clamp(16px, 3vw, 48px); background: #1b1234; border-bottom: 1px solid var(--border); }
+.logo-area { display: flex; align-items: center; gap: .65rem; text-decoration: none; }
+.logo-area h1, .logo-area span { font-size: clamp(18px, 2vw, 25px); font-weight: 650; margin: 0; }
+.Herologo { width: 44px; height: 44px; object-fit: contain; }
+.navigationlinks { display: flex; align-items: center; flex-wrap: wrap; gap: clamp(4px, 1.3vw, 20px); }
+.nav-link { padding: .6rem .35rem; font-size: .9rem; text-decoration: none; border-bottom: 2px solid transparent; }
+.nav-link:hover { color: #dcbfff; }
+.nav-link[aria-current="page"], .homenav { border-color: var(--accent); }
+.hero { text-align: center; padding: 2.1rem 1rem; background: linear-gradient(#22113755, #221137aa), url("../Files/Background1.jpg") center 55% / cover; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: clamp(32px, 4vw, 46px); }
+.hero p { color: #f0ddff; font-size: 1.15rem; }
+.eyebrow { font-size: .72rem !important; letter-spacing: .35em; text-transform: uppercase; }
+dialog { width: min(92vw, 460px); max-height: 90vh; max-height: 90dvh; overflow-y: auto; padding: 1.6rem; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); color: var(--text); }
+dialog::backdrop { background: #090513bb; }
+dialog form { display: grid; gap: .65rem; }
+dialog h2 { margin-bottom: .2rem; }
+.modal-buttons { display: flex; justify-content: flex-end; gap: .6rem; margin-top: .6rem; }
+.form-error, .error { color: var(--red); }
+.form-error:empty { display: none; }
+.form-hint { font-size: .85rem; }
+.placeholder { max-width: 620px; margin: clamp(40px, 12vh, 140px) auto; padding: 2rem; text-align: center; }
+.placeholder img { width: 96px; height: 96px; margin-bottom: 1.5rem; }
+.placeholder .error-code { color: var(--accent); font-size: 4rem; font-weight: 700; }
+.placeholder .card-button { margin-top: 1rem; }
+[hidden] { display: none !important; }
+@media (max-width: 760px) {
+    header { flex-direction: column; align-items: flex-start; gap: .4rem; padding: .7rem 1rem; }
+    .navigationlinks { width: 100%; justify-content: space-between; gap: .2rem; }
+    .nav-link { font-size: .8rem; }
+    #logout-button { padding: .4rem .6rem; }
+    input, select { font-size: 16px; }
+    .modal-buttons { flex-wrap: wrap; }
 }
-
-main {
-    background-image: url(../FIles/Background2.png);
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center;
+@media (pointer: coarse) {
+    button, .nav-link, .card-button { min-height: 44px; }
+    .nav-link { display: inline-flex; align-items: center; }
 }
-.logo-area {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.Herologo {
-    width: clamp(45px, 5vw, 55px);
-    height: clamp(45px, 5vw, 55px);
-    object-fit: contain;
-}
-
-.navigationlinks {
-    display: flex;
-    align-items: center;
-    
-    gap: clamp(8px, 2vw, 20px);
-}
-
-.nav-link {
-    color: white;
-    text-decoration: none;
-    font-size: clamp(13px, 1.5vw, 15px);
-    font-weight: bold;
-
-    border-radius: 8px;
-
-    padding: 8px 10px;
-
-    transition: 0.4s;
-}
-
-.nav-link:hover {
-
-    background: rgba(255, 255, 255, 0.219);
-    transform: scale(1.05);
-}
-
-.homenav {
-    border-bottom: 2px solid rgb(120, 41, 156);
-}
-
-#logout-button {
-    padding: 9px 18px;
-    border: black;
-    border-radius: 20px;
-
-    background-color: white;
-    color: purple;
-
-    font-weight: bold;
-
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-#logout-button:hover {
-    transform: scale(1.05);
-}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }

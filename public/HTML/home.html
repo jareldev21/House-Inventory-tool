@@ -6,37 +6,26 @@
 
         <title>Home Page</title>
 
+            <link rel="stylesheet" href="../CSS/main.css">
             <link rel="stylesheet" href="../CSS/Home.css">
-            <link rel="icon" type="image/png" href="../FIles/Home1.png">
+            <link rel="icon" type="image/svg+xml" href="../Files/branding/logo.svg">
 
     </head>
 
     <body>
 
         <header>
+        <a class="logo-area" href="home.html"><img src="../Files/branding/logo.svg" alt="" class="Herologo"><span>Our Home Hub</span></a>
+        <nav class="navigationlinks" aria-label="Main navigation">
+            <a href="home.html" class="nav-link" aria-current="page">Home</a>
+            <a href="inventory.html" class="nav-link">Inventory</a>
+            <a href="todos.html" class="nav-link">To Do's</a>
+            <a href="placestogo.html" class="nav-link">Places to Go</a>
+            <button id="logout-button" type="button">Logout</button>
+        </nav>
+    </header>
 
-            <div class="logo-area">
-
-                <img src="../FIles/Home1.png" alt="Logo" class="Herologo">
-
-                <h1>Our Home Hub</h1>
-
-            </div>
-
-            <nav class="navigationlinks">
-
-                <a href="home.html" class="nav-link homenav">Home</a>
-                <a href="inventory.html" class="nav-link">Inventory</a>
-                <a href="404.html" class="nav-link">To Do's</a>
-                <a href="404.html" class="nav-link">Places to Go</a>
-
-                <button id="logout-button">Logout</button>
-
-            </nav>
-
-        </header>
-
-        <main>
+        <main class="homepage">
 
             <section class="welcome-section">
 
@@ -58,7 +47,7 @@
 
                 <div class="feature-card Inventory">
 
-                    <img src="../Files/Inventoryicon.png" alt="Inventory Icon" class="card-icon inventoryicon">
+                    <img src="../Files/branding/inventory.svg" alt="Inventory Icon" class="card-icon inventoryicon">
 
                     <div class="card-content">
                     
@@ -71,13 +60,13 @@
 
                 <div class="feature-card Todos">
 
-                    <img src="../Files/Todos.png" alt="Icon for todo's" class="card-icon todolisticon">
+                    <img src="../Files/branding/todos.svg" alt="Icon for todo's" class="card-icon todolisticon">
 
                     <div class="card-content">
                     
                         <h2>To-do List</h2>
 
-                        <a href="inventory.html" class="card-button">Open To-do List →</a>
+                        <a href="todos.html" class="card-button">Open To-do List →</a>
 
                     </div> 
 
@@ -85,17 +74,17 @@
 
                 <div class="feature-card Places">
 
-                    <img src="../Files/Places.png" alt="Icon of places to go" class="card-icon">
+                    <img src="../Files/branding/places.svg" alt="Icon of places to go" class="card-icon">
 
                     <div class="card-content">
                     
                         <h2>Find Places to Go </h2>
 
-                        <a href="inventory.html" class="card-button">Find/Add Places →</a>
+                        <a href="placestogo.html" class="card-button">Find/Add Places →</a>
 
                     </div> 
 
-                </article>
+                </div>
 
             </section>
 

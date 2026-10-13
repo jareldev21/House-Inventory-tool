@@ -1,37 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-        <title>Home Page</title>
-
-            <link rel="stylesheet" href="../CSS/todos.css">
-            <link rel="icon" type="image/png" href="../FIles/Home1.png">
-
-    </head>
-
-    <body>
-
-        <header>
-
-            <div class="logo-area">
-
-                <img src="../FIles/Home1.png" alt="Logo" class="Herologo">
-
-                <h1>Our Home Hub</h1>
-
-            </div>
-
-            <nav class="navigationlinks">
-
-                <a href="home.html" class="nav-link homenav">Home</a>
-                <a href="inventory.html" class="nav-link">Inventory</a>
-                <a href="Todos.html" class="nav-link">To Do's</a>
-                <a href="placestogo.html" class="nav-link">Places to Go</a>
-
-                <button id="logout-button">Logout</button>
-
-            </nav>
-
-        </header>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>To-Do List | Our Home Hub</title>
+    <link rel="stylesheet" href="../CSS/main.css">
+    <link rel="stylesheet" href="../CSS/todos.css">
+    <link rel="icon" type="image/svg+xml" href="../Files/branding/logo.svg">
+    <script type="module" src="../JS/home.js"></script>
+</head>
+<body>
+    <header>
+        <a class="logo-area" href="home.html"><img src="../Files/branding/logo.svg" alt="" class="Herologo"><span>Our Home Hub</span></a>
+        <nav class="navigationlinks" aria-label="Main navigation">
+            <a href="home.html" class="nav-link">Home</a>
+            <a href="inventory.html" class="nav-link">Inventory</a>
+            <a href="todos.html" class="nav-link" aria-current="page">To Do's</a>
+            <a href="placestogo.html" class="nav-link">Places to Go</a>
+            <button id="logout-button" type="button">Logout</button>
+        </nav>
+    </header>
+    <main class="placeholder">
+        <img src="../Files/branding/todos.svg" alt="">
+        <p class="eyebrow">To-Do List</p>
+        <p class="error-code">404</p>
+        <h1>Page Not Found</h1>
+        <p>This feature is not available yet.</p>
+        <a href="home.html" class="card-button">Return to homepage</a>
+    </main>
+</body>
+</html>
