@@ -169,6 +169,8 @@ function renderCategories() {
 
             renderCategories();
 
+            saveCategories();
+
         });
 
         categoryCard.appendChild(editCategoryButton);
