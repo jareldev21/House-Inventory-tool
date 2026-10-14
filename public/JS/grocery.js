@@ -211,12 +211,11 @@ byId('inventoryForm').addEventListener('submit',async event=>{
             }else tx.set(groceryRef,{categories:next,groceryItems:updated},{merge:true});
         });
         if(token!==session)return;
-        categories=categories.map(c=>c.id===targetId?{...c,items:[...c.items,{id:'new',name:current.name,status}]}:c);
         // Reload authoritative data and versions after the committed transaction.
         saving=false;
         byId('inventoryDialog').close();
         await load();
-        feedback('Item added to inventory.');
+        if (ready) feedback('Item added to inventory.');
     }catch(error){
         console.error('Add to inventory failed',error);
         if(token===session){
