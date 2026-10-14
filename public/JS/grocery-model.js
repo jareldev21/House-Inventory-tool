@@ -25,9 +25,8 @@ export function optionalNumber(input, label, max, decimalPlaces, positive = fals
 
 /**
  * Stored-data validation: Reject unsupported or duplicate grocery entries before allowing edits.
- * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ * Keep unsupported records from being silently changed during Firestore updates.
  */
-// 2. Stored-record validation and UI control helpers.
 export function validateList(records) {
     if (!Array.isArray(records)) throw Error('Grocery list has an unsupported format.');
     const ids = new Set();
