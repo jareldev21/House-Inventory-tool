@@ -7,6 +7,7 @@ const byId = id => document.getElementById(id);
 let user = null, session = 0, ready = false, saving = false;
 let items = [], version = inventoryVersion([]), categories = [], categoryVersion = inventoryVersion([]);
 let inventoryId = null, selectedItemId = null;
+let groceryDrag = null;
 const money = value => '₱' + Number(value).toLocaleString('en-PH', {minimumFractionDigits:2,maximumFractionDigits:2});
 const userRef = () => doc(db, 'users', user.uid);
 const activeRef = () => inventoryId ? doc(db, 'inventories', inventoryId) : userRef();
@@ -40,11 +41,91 @@ function node(tag, className, value) {
 function action(label, callback) {
     const el = node('button', '', label); el.type = 'button'; el.disabled = !ready || saving; el.addEventListener('click', callback); return el;
 }
+// Persist display order by rearranging the same groceryItems array.
+function reorderedList(id, targetId, after) {
+    if (id === targetId) return items;
+    const result = [...items];
+    const sourceIndex = result.findIndex(item => item.id === id);
+    const destinationIndex = result.findIndex(item => item.id === targetId);
+    if (sourceIndex === -1 || destinationIndex === -1) return items;
+    const [moving] = result.splice(sourceIndex, 1);
+    const index = result.findIndex(item => item.id === targetId);
+    result.splice(index + Number(after), 0, moving);
+    return result;
+}
+function clearGroceryDrag() {
+    document.querySelectorAll('.grocery-drop-target').forEach(el => el.classList.remove('grocery-drop-target'));
+    groceryDrag?.ghost?.remove();
+    groceryDrag?.handle?.classList.remove('dragging');
+    groceryDrag = null;
+}
+function groceryHandle(item) {
+    const handle = node('button', 'drag-handle', '⠿');
+    handle.type = 'button';
+    handle.disabled = !ready || saving;
+    handle.dataset.item = item.id;
+    handle.title = 'Drag or use up/down arrow keys';
+    handle.setAttribute('aria-label', 'Rearrange ' + item.name + '. Drag or use up/down arrow keys.');
+    handle.addEventListener('pointerdown', event => {
+        if (!ready || saving || event.button !== 0 || groceryDrag) return;
+        groceryDrag = { pointerId:event.pointerId, handle, id:item.id, name:item.name,
+            x:event.clientX, y:event.clientY, active:false, target:null, ghost:null };
+        handle.setPointerCapture(event.pointerId);
+    });
+    handle.addEventListener('pointermove', event => {
+        const drag = groceryDrag;
+        if (!drag || drag.handle !== handle || drag.pointerId !== event.pointerId || !ready || saving) return;
+        if (!drag.active && Math.hypot(event.clientX-drag.x, event.clientY-drag.y) < 7) return;
+        event.preventDefault();
+        if (!drag.active) {
+            drag.active = true;
+            handle.classList.add('dragging');
+            drag.ghost = node('div','grocery-drag-preview','⠿  '+drag.name);
+            document.body.append(drag.ghost);
+        }
+        drag.ghost.style.left = Math.min(event.clientX + 14, window.innerWidth - 50)+'px';
+        drag.ghost.style.top = Math.max(5,event.clientY - 20)+'px';
+        if (event.clientY < 55) window.scrollBy(0,-20);
+        if (event.clientY > window.innerHeight - 55) window.scrollBy(0,20);
+        document.querySelectorAll('.grocery-drop-target').forEach(el => el.classList.remove('grocery-drop-target'));
+        const row = document.elementFromPoint(event.clientX,event.clientY)?.closest('.grocery-item');
+        drag.target = row && row.dataset.item !== drag.id
+            ? {id:row.dataset.item,after:event.clientY>=row.getBoundingClientRect().top + row.getBoundingClientRect().height/2}
+            : null;
+        if (drag.target) row.classList.add('grocery-drop-target');
+    });
+    handle.addEventListener('pointerup', async event => {
+        if (!groceryDrag || groceryDrag.handle !== handle || groceryDrag.pointerId !== event.pointerId) return;
+        const target = groceryDrag.active ? groceryDrag.target : null;
+        clearGroceryDrag();
+        if (target && ready && !saving) {
+            const next = reorderedList(item.id,target.id,target.after);
+            if (next !== items) await saveList(next);
+        }
+    });
+    handle.addEventListener('pointercancel',clearGroceryDrag);
+    handle.addEventListener('lostpointercapture',() => {
+        if (groceryDrag?.handle === handle) clearGroceryDrag();
+    });
+    handle.addEventListener('keydown', async event => {
+        if (!ready || saving || !['ArrowUp','ArrowDown'].includes(event.key)) return;
+        const index = items.findIndex(entry => entry.id === item.id);
+        const delta = event.key === 'ArrowUp' ? -1 : 1;
+        const target = items[index + delta];
+        if (!target) return;
+        event.preventDefault();
+        if (await saveList(reorderedList(item.id,target.id,delta > 0))) {
+            [...document.querySelectorAll('.grocery-list .drag-handle')].find(el=>el.dataset.item===item.id)?.focus();
+        }
+    });
+    return handle;
+}
 function render() {
     const list = byId('groceryList');
     list.replaceChildren();
     for (const item of items) {
         const li = node('li', 'grocery-item ' + item.state);
+        li.dataset.item = item.id;
         const details = node('div');
         details.append(node('div', 'grocery-name', item.name));
         const meta = item.state === 'bought' ? 'Bought · ' + money(item.price) :
@@ -58,7 +139,7 @@ function render() {
         actions.append(action('Remove', () => {
             if (window.confirm('Remove “' + item.name + '” from your grocery list?')) saveList(items.filter(entry => entry.id !== item.id));
         }));
-        li.append(details, actions); list.append(li);
+        li.append(groceryHandle(item), details, actions); list.append(li);
     }
     byId('groceryCount').textContent = items.length + ' items · ' + items.filter(i=>i.state==='bought').length + ' bought';
     byId('groceryTotal').textContent = 'Spent: ' + money(items.filter(i=>i.state==='bought').reduce((sum,i)=>sum+i.price,0));
@@ -96,7 +177,7 @@ async function load() {
     } finally { if (token === session) render(); }
 }
 onAuthStateChanged(auth, value => {
-    session++; user=value; ready=false; saving=false; inventoryId=null; items=[]; categories=[];
+    session++; clearGroceryDrag(); user=value; ready=false; saving=false; inventoryId=null; items=[]; categories=[];
     byId('boughtDialog').close(); byId('inventoryDialog').close(); render();
     if (!value) { location.replace('index.html'); return; }
     load();
