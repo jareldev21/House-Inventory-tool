@@ -27,7 +27,10 @@ function walk(directory) {
     : [...source.matchAll(/^\s*import\s+(?:[\s\S]*?\s+from\s+)?['"]([^'"]+)['"]/gm)].map(match=>match[1]);
   for(const reference of references){
    if(/^(https?:|#|data:)/.test(reference))continue;
-   exactPath(reference.startsWith('/')?path.join(root,reference):path.resolve(path.dirname(file),reference));
+   // Query strings and fragments alter navigation, not the underlying filename.
+   const localPath = reference.split(/[?#]/, 1)[0];
+   if (!localPath) continue;
+   exactPath(localPath.startsWith('/') ? path.join(root,localPath) : path.resolve(path.dirname(file),localPath));
    checked++;
   }
   if(name.endsWith('.html')){
