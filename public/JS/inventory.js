@@ -1,11 +1,13 @@
-// 1. Firebase and data helpers
+// INVENTORY CONTROLLER: UI, CRUD, sorting, and persistence.
+// Pure model/data logic belongs in inventory-model.js; sharing logic in inventory-sharing.js.
+// 1. Dependencies and shared helpers
 import { auth, db } from './firebase.js';
 import { doc, getDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 import { normalizeCategories, stockStatus, parseStatus, matchesItem, inventoryVersion, categoryIcons, categoryIconKey, moveCategory, moveItem } from './inventory-model.js';
 import { createSharedInventory, joinSharedInventory, selectPersonalInventory, parseInventoryId } from './inventory-sharing.js';
 
-// 2. DOM references and application state
+// 2. DOM references, transient UI state, and inventory version.
 const byId = id => document.getElementById(id);
 const categoryModal = byId('categoryModal');
 const itemModal = byId('itemModal');
@@ -26,11 +28,19 @@ let originalItemCategory = null;
 let activeInventoryId = null;
 let dragging = null;
 
+/**
+ * UI feedback: Update the inventory status line and error styling. No data is written here.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function message(text, error = false) {
     byId('inventoryMessage').textContent = text;
     byId('inventoryMessage').classList.toggle('error', error);
 }
 
+/**
+ * UI state: Disable or enable editing controls according to the current session, load, and save state.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function updateControls() {
     document.querySelectorAll('[data-mutation]').forEach(button => { button.disabled = !ready || saving; });
     byId('addItemBtn').disabled = !ready || saving || categories.length === 0;
@@ -50,7 +60,11 @@ function updateControls() {
         : 'To rearrange, select All Items, clear the search, and choose the All Items stock filter.';
 }
 
-// 3. Authentication and loading. Ignore requests from a previous user session.
+// 3. Session lifecycle and inventory loading (Firestore READ).
+/**
+ * Firestore read: Load the active personal/shared inventory, normalize legacy records, and guard against stale sessions.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 async function loadCategories() {
     if (!currentUser || saving) return;
     const requestSession = ++session;
@@ -86,6 +100,7 @@ async function loadCategories() {
     renderCategories();
 }
 
+// Authentication event: reset previous-user UI before loading the new user's records.
 onAuthStateChanged(auth, user => {
     session++;
     clearDrag();
@@ -109,8 +124,12 @@ onAuthStateChanged(auth, user => {
     loadCategories();
 });
 
-// 4. Persistence. Apply changes only after Firestore confirms the save.
+// 4. Inventory saving (Firestore WRITE): merge, compare versions, then update UI.
 // Transactions reject stale tabs; merge preserves unrelated user-document fields.
+/**
+ * Firestore write: Persist a complete categories array in a conflict-checked transaction; commit UI state only after success.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 async function saveCategories(nextCategories) {
     if (!ready || saving || !currentUser) return false;
     const user = currentUser;
@@ -152,7 +171,11 @@ async function saveCategories(nextCategories) {
     }
 }
 
-// 5. Category and item management
+// 5. Category and item forms, edit actions, and deletion.
+/**
+ * Category form: Populate and open the category editor without changing saved inventory.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function openCategoryModal(category = null) {
     if (!ready || saving) return;
     editingCategory = category?.id ?? null;
@@ -174,6 +197,10 @@ function openCategoryModal(category = null) {
     categoryModal.showModal();
 }
 
+/**
+ * Item form: Populate and open an item editor, preserving the item's original category and stock status.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function openItemModal(categoryId = activeCategory, item = null) {
     if (!ready || saving || !categories.length) return;
     itemForm.reset();
@@ -189,6 +216,7 @@ function openItemModal(categoryId = activeCategory, item = null) {
     itemModal.showModal();
 }
 
+// Category form handler: create/update in a cloned array, then save atomically.
 categoryForm.addEventListener('submit', async event => {
     event.preventDefault();
     if (!ready || saving) return;
@@ -201,6 +229,7 @@ categoryForm.addEventListener('submit', async event => {
     if (await saveCategories(next)) categoryModal.close();
 });
 
+// Item form handler: preserve existing custom fields and validate stock status.
 itemForm.addEventListener('submit', async event => {
     event.preventDefault();
     if (!ready || saving) return;
@@ -226,6 +255,10 @@ itemForm.addEventListener('submit', async event => {
     } catch (error) { byId('itemError').textContent = error.message; }
 });
 
+/**
+ * Category mutation: Ask for confirmation, remove a category and its items, then save through saveCategories.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 async function removeCategory(category) {
     if (!ready || saving || !window.confirm('Delete “' + category.name + '” and all ' + category.items.length + ' items?')) return;
     if (await saveCategories(categories.filter(record => record.id !== category.id))) {
@@ -234,6 +267,10 @@ async function removeCategory(category) {
     }
 }
 
+/**
+ * Item mutation: Ask for confirmation, remove one item, and persist through saveCategories.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 async function removeItem(category, item) {
     if (!ready || saving || !window.confirm('Remove “' + item.name + '”?')) return;
     const next = structuredClone(categories);
@@ -241,11 +278,19 @@ async function removeItem(category, item) {
     await saveCategories(next);
 }
 
-// Reorder only when the entire inventory is visible; filtered drops are ambiguous.
+// 6. Pointer and keyboard reordering; filtered drops are intentionally disabled.
+/**
+ * Drag constraints: Allow ordering only when the complete, unfiltered inventory is visible and writable.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function canReorder() {
     return ready && !saving && activeCategory === 'all' && activeFilter === 'all' && !byId('search').value.trim();
 }
 
+/**
+ * Drag feedback: Remove visual drop targets after pointer movement or cancellation.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function clearDropHighlight() {
     document.querySelectorAll('.drag-drop-target').forEach(target => {
         target.classList.remove('drag-drop-target');
@@ -253,6 +298,10 @@ function clearDropHighlight() {
     });
 }
 
+/**
+ * Drag lifecycle: Release the drag preview and clear its temporary interaction state.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function clearDrag() {
     clearDropHighlight();
     if (dragging?.ghost) dragging.ghost.remove();
@@ -260,6 +309,10 @@ function clearDrag() {
     dragging = null;
 }
 
+/**
+ * Drag/keyboard controls: Create an accessible grip for category/item moves; delegate persistence to saveCategories.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function dragHandle(kind, category, item = null) {
     const handle = element('button', 'drag-handle', '⠿');
     handle.type = 'button';
@@ -373,7 +426,11 @@ function dragHandle(kind, category, item = null) {
     return handle;
 }
 
-// 6. Rendering. textContent prevents saved names from injecting HTML.
+// 7. DOM helpers and rendering. textContent prevents name-based HTML injection.
+/**
+ * DOM helper: Construct an element with a CSS class and safe textContent.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function element(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -381,6 +438,10 @@ function element(tag, className, text) {
     return node;
 }
 
+/**
+ * DOM helper: Create a non-submitting action button and bind its click handler.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function button(text, action, className = '', mutation = true) {
     const node = element('button', className, text);
     node.type = 'button';
@@ -389,6 +450,10 @@ function button(text, action, className = '', mutation = true) {
     return node;
 }
 
+/**
+ * DOM helper: Render only approved local category icon assets.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function categoryIconImage(key, className) {
     const image = element('img', className);
     image.src = '../Files/branding/' + categoryIconKey(key) + '.svg';
@@ -396,6 +461,10 @@ function categoryIconImage(key, className) {
     return image;
 }
 
+/**
+ * Rendering: Build one item row with stock badge, drag grip, and edit/remove buttons.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function renderItem(category, item) {
     const status = stockStatus(item);
     const row = element('li', 'item-card ' + status);
@@ -414,6 +483,10 @@ function renderItem(category, item) {
     return row;
 }
 
+/**
+ * Rendering: Rebuild sidebar navigation and cards from current state, search, and stock filters.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function renderCategories() {
     const total = categories.reduce((sum, category) => sum + category.items.length, 0);
     const categoryList = byId('categoryList');
@@ -463,7 +536,8 @@ function renderCategories() {
     updateControls();
 }
 
-// 7. Search, filtering, and event listeners
+// 8. User-event bindings for filters, CRUD forms, and logout.
+// New inventory UI actions belong here; actual data writes go through saveCategories.
 byId('search').addEventListener('input', renderCategories);
 document.querySelectorAll('[data-filter]').forEach(control => control.addEventListener('click', () => {
     activeFilter = control.dataset.filter;
@@ -483,7 +557,11 @@ byId('logout-button').addEventListener('click', async () => {
 });
 renderCategories();
 
-// 8. Connecting inventories. Changing connections never merges or deletes personal items.
+// 9. Shared inventory connection actions. Never merge/delete personal items during switching.
+/**
+ * Inventory connection: Wrap create/join/personal switching with status feedback and a fresh reload.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 async function changeInventory(action) {
     if (!currentUser || saving) return;
     const user = currentUser;
