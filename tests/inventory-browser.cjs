@@ -279,9 +279,23 @@ const mock = name => fs.readFileSync(path.join(__dirname,name+'.mock.js'),'utf8'
   await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).locator('.drag-handle').press('ArrowUp');
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('test-doc-test-user')).groceryItems[0].name === 'Dish soap');
   await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).getByRole('button',{name:'Bought'}).click();
+  // Price and quantity can both be omitted; missing values remain null, not zero.
+  await page.locator('#boughtForm button[type="submit"]').click();
+  await page.getByText('Quantity not recorded · Price not recorded',{exact:false}).waitFor();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('test-doc-test-user')).groceryItems.find(item=>item.name==='Dish soap').boughtQuantity),null);
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('test-doc-test-user')).groceryItems.find(item=>item.name==='Dish soap').price),null);
+  await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).getByRole('button',{name:'Edit purchase'}).click();
+  await page.locator('#boughtQuantity').fill('2.5');
   await page.locator('#boughtPrice').fill('35.50');
   await page.locator('#boughtForm button[type="submit"]').click();
-  await page.getByText('Bought · ₱35.50',{exact:false}).waitFor();
+  await page.getByText('Quantity: 2.5 · ₱35.50',{exact:false}).waitFor();
+  await page.reload();
+  await page.getByText('Quantity: 2.5 · ₱35.50',{exact:false}).waitFor();
+  await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).getByRole('button',{name:'Edit purchase'}).click();
+  await page.locator('#boughtQuantity').fill('');
+  await page.locator('#boughtForm button[type="submit"]').click();
+  await page.getByText('Quantity not recorded · ₱35.50',{exact:false}).waitFor();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('test-doc-test-user')).groceryItems.find(item=>item.name==='Dish soap').boughtQuantity),null);
   await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).getByRole('button',{name:'Remove'}).click();
   await page.getByText('Dish soap',{exact:true}).waitFor({state:'hidden'});
   await page.getByRole('link',{name:'Home'}).click();
