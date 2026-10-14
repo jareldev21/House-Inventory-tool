@@ -2,7 +2,7 @@
 import { auth, db } from './firebase.js';
 import { doc, getDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
-import { normalizeCategories, stockStatus, parseStatus, matchesItem, inventoryVersion, categoryIcons, categoryIconKey } from './inventory-model.js';
+import { normalizeCategories, stockStatus, parseStatus, matchesItem, inventoryVersion, categoryIcons, categoryIconKey, moveCategory, moveItem } from './inventory-model.js';
 import { createSharedInventory, joinSharedInventory, selectPersonalInventory, parseInventoryId } from './inventory-sharing.js';
 
 // 2. DOM references and application state
@@ -24,6 +24,7 @@ let editingCategory = null;
 let editingItem = null;
 let originalItemCategory = null;
 let activeInventoryId = null;
+let dragging = null;
 
 function message(text, error = false) {
     byId('inventoryMessage').textContent = text;
@@ -43,6 +44,10 @@ function updateControls() {
     byId('personalInventoryBtn').disabled = !currentUser || saving;
     byId('refreshInventoryBtn').disabled = !currentUser || saving;
     byId('copyInventoryId').disabled = !activeInventoryId || saving;
+    document.querySelectorAll('.drag-handle').forEach(handle => { handle.disabled = !canReorder(); });
+    byId('reorderHelp').textContent = canReorder()
+        ? 'Drag the grip handles to rearrange categories or items. Drop an item into another category to move it. Arrow keys work on the handles too.'
+        : 'To rearrange, select All Items, clear the search, and choose the All Items stock filter.';
 }
 
 // 3. Authentication and loading. Ignore requests from a previous user session.
@@ -83,6 +88,7 @@ async function loadCategories() {
 
 onAuthStateChanged(auth, user => {
     session++;
+    clearDrag();
     currentUser = user;
     ready = false;
     saving = false;
@@ -235,6 +241,138 @@ async function removeItem(category, item) {
     await saveCategories(next);
 }
 
+// Reorder only when the entire inventory is visible; filtered drops are ambiguous.
+function canReorder() {
+    return ready && !saving && activeCategory === 'all' && activeFilter === 'all' && !byId('search').value.trim();
+}
+
+function clearDropHighlight() {
+    document.querySelectorAll('.drag-drop-target').forEach(target => {
+        target.classList.remove('drag-drop-target');
+        target.removeAttribute('data-drop-position');
+    });
+}
+
+function clearDrag() {
+    clearDropHighlight();
+    if (dragging?.ghost) dragging.ghost.remove();
+    if (dragging?.handle) dragging.handle.classList.remove('dragging');
+    dragging = null;
+}
+
+function dragHandle(kind, category, item = null) {
+    const handle = element('button', 'drag-handle', '⠿');
+    handle.type = 'button';
+    handle.dataset.mutation = '';
+    handle.dataset.kind = kind;
+    handle.dataset.category = category.id;
+    if (item) handle.dataset.item = item.id;
+    handle.setAttribute('aria-label', kind === 'category'
+        ? 'Rearrange category ' + category.name + '. Drag or use arrow keys.'
+        : 'Rearrange item ' + item.name + '. Drag, use up/down to reorder, or left/right to change categories.');
+    handle.title = 'Drag to reorder (arrow keys also work)';
+    handle.addEventListener('pointerdown', event => {
+        if (!canReorder() || event.button !== 0 || dragging) return;
+        dragging = {
+            pointerId: event.pointerId, handle, kind, categoryId: category.id,
+            itemId: item?.id ?? null, title: item?.name ?? category.name,
+            startX: event.clientX, startY: event.clientY, active: false,
+            target: null, ghost: null
+        };
+        handle.setPointerCapture(event.pointerId);
+    });
+    handle.addEventListener('pointermove', event => {
+        const drag = dragging;
+        if (!drag || drag.handle !== handle || event.pointerId !== drag.pointerId || !canReorder()) return;
+        if (!drag.active && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 7) return;
+        event.preventDefault();
+        if (!drag.active) {
+            drag.active = true;
+            handle.classList.add('dragging');
+            drag.ghost = element('div', 'drag-preview', '⠿  ' + drag.title);
+            document.body.append(drag.ghost);
+        }
+        drag.ghost.style.left = Math.min(event.clientX + 14, window.innerWidth - 50) + 'px';
+        drag.ghost.style.top = Math.max(5, event.clientY - 20) + 'px';
+        if (event.clientY < 55) window.scrollBy(0, -20);
+        else if (event.clientY > window.innerHeight - 55) window.scrollBy(0, 20);
+        const hovered = document.elementFromPoint(event.clientX, event.clientY);
+        const card = hovered?.closest('.category-card');
+        const nav = hovered?.closest('.category-nav');
+        const targetCategoryId = card?.dataset.categoryId
+            || (nav?.dataset.categoryId !== 'all' ? nav?.dataset.categoryId : null);
+        const itemRow = drag.kind === 'item' ? hovered?.closest('.item-card') : null;
+        clearDropHighlight();
+        drag.target = null;
+        if (!targetCategoryId) return;
+        if (drag.kind === 'category') {
+            if (!card || targetCategoryId === drag.categoryId) return;
+            const bounds = card.getBoundingClientRect();
+            const after = event.clientY >= bounds.top + bounds.height / 2;
+            drag.target = { categoryId: targetCategoryId, after };
+            card.classList.add('drag-drop-target');
+            card.dataset.dropPosition = after ? 'after' : 'before';
+        } else {
+            const bounds = itemRow?.getBoundingClientRect();
+            const after = Boolean(bounds && event.clientY >= bounds.top + bounds.height / 2);
+            drag.target = { categoryId: targetCategoryId, itemId: itemRow?.dataset.itemId ?? null, after };
+            const highlight = itemRow || card || nav;
+            highlight?.classList.add('drag-drop-target');
+            if (highlight) highlight.dataset.dropPosition = after ? 'after' : 'before';
+        }
+    });
+    handle.addEventListener('pointerup', async event => {
+        const drag = dragging;
+        if (!drag || drag.handle !== handle || event.pointerId !== drag.pointerId) return;
+        const target = drag.active ? drag.target : null;
+        clearDrag();
+        if (!target || !canReorder()) return;
+        try {
+            const next = drag.kind === 'category'
+                ? moveCategory(categories, drag.categoryId, target.categoryId, target.after)
+                : moveItem(categories, drag.categoryId, drag.itemId, target.categoryId, target.itemId, target.after);
+            if (inventoryVersion(next) !== inventoryVersion(categories)) await saveCategories(next);
+        } catch (error) { message(error.message, true); }
+    });
+    handle.addEventListener('pointercancel', clearDrag);
+    handle.addEventListener('lostpointercapture', () => {
+        if (dragging?.handle === handle) clearDrag();
+    });
+    handle.addEventListener('keydown', async event => {
+        if (!canReorder()) return;
+        const key = event.key;
+        let next;
+        if (kind === 'category' && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
+            const index = categories.findIndex(entry => entry.id === category.id);
+            const delta = key === 'ArrowUp' || key === 'ArrowLeft' ? -1 : 1;
+            const target = categories[index + delta];
+            if (!target) return;
+            next = moveCategory(categories, category.id, target.id, delta > 0);
+        } else if (kind === 'item' && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
+            if (key === 'ArrowLeft' || key === 'ArrowRight') {
+                const index = categories.findIndex(entry => entry.id === category.id);
+                const target = categories[index + (key === 'ArrowLeft' ? -1 : 1)];
+                if (!target) return;
+                next = moveItem(categories, category.id, item.id, target.id);
+            } else {
+                const index = category.items.findIndex(entry => entry.id === item.id);
+                const delta = key === 'ArrowUp' ? -1 : 1;
+                const target = category.items[index + delta];
+                if (!target) return;
+                next = moveItem(categories, category.id, item.id, category.id, target.id, delta > 0);
+            }
+        } else return;
+        event.preventDefault();
+        if (await saveCategories(next)) {
+            const newHandle = [...document.querySelectorAll('.drag-handle')].find(el =>
+                el.dataset.kind === kind && (kind === 'category'
+                    ? el.dataset.category === category.id : el.dataset.item === item.id));
+            newHandle?.focus();
+        }
+    });
+    return handle;
+}
+
 // 6. Rendering. textContent prevents saved names from injecting HTML.
 function element(tag, className, text) {
     const node = document.createElement(tag);
@@ -261,6 +399,7 @@ function categoryIconImage(key, className) {
 function renderItem(category, item) {
     const status = stockStatus(item);
     const row = element('li', 'item-card ' + status);
+    row.dataset.itemId = item.id;
     const details = element('div', 'item-details');
     details.append(element('h3', '', item.name));
     if (status === 'unconfigured') details.append(element('p', 'item-hint', 'Edit to choose a stock status.'));
@@ -271,7 +410,7 @@ function renderItem(category, item) {
     const remove = button('Remove', () => removeItem(category, item), 'text-button danger');
     remove.setAttribute('aria-label', 'Remove ' + item.name);
     actions.append(edit, remove);
-    row.append(details, badge, actions);
+    row.append(dragHandle('item', category, item), details, badge, actions);
     return row;
 }
 
@@ -286,6 +425,7 @@ function renderCategories() {
         label.append(element('span', '', category.name));
         navigation.append(label, element('span', 'count', category.count));
         navigation.setAttribute('aria-pressed', String(activeCategory === category.id));
+        navigation.dataset.categoryId = category.id;
         categoryList.append(navigation);
     });
     document.querySelectorAll('[data-filter]').forEach(control => control.setAttribute('aria-pressed', String(control.dataset.filter === activeFilter)));
@@ -298,11 +438,12 @@ function renderCategories() {
         if (!items.length && (search.trim() || activeFilter !== 'all')) return;
         shown += items.length;
         const card = element('section', 'category-card');
+        card.dataset.categoryId = category.id;
         const heading = element('div', 'category-heading');
         const icon = categoryIconImage(category.icon, 'category-icon');
         const title = element('div');
         title.append(element('h2', '', category.name), element('p', '', items.length + ' of ' + category.items.length + ' items'));
-        heading.append(icon, title);
+        heading.append(dragHandle('category', category), icon, title);
         const actions = element('div', 'category-actions');
         const edit = button('Edit', () => openCategoryModal(category), 'text-button');
         edit.setAttribute('aria-label', 'Edit category ' + category.name);
