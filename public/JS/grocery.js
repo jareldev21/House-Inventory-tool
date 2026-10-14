@@ -28,7 +28,7 @@ function validateList(records) {
 function controls() {
     const disabled = !ready || saving;
     document.querySelectorAll('#importLow,#importUnavailable,#addGroceryBtn,#groceryName').forEach(node => node.disabled = disabled);
-    document.querySelectorAll('.grocery-item-actions button').forEach(node => node.disabled = disabled);
+    document.querySelectorAll('.grocery-item-actions button, .grocery-list .drag-handle').forEach(node => node.disabled = disabled);
     document.querySelectorAll('dialog input,dialog select,dialog button').forEach(node => node.disabled = disabled);
     byId('logout-button').disabled = saving;
 }
