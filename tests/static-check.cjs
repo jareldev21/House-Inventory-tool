@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+// Structural checks are offline: verify source assets and ES-module imports without Firebase.
 const root = path.resolve(__dirname, '../public');
 let checked = 0;
 function exactPath(file) {
@@ -16,9 +17,14 @@ function walk(directory) {
  for(const name of fs.readdirSync(directory)) {
   const file=path.join(directory,name);
   if(fs.statSync(file).isDirectory()){walk(file);continue;}
-  if(!/\.(html|css)$/.test(name))continue;
+  if(!/\.(html|css|js)$/.test(name))continue;
   const source=fs.readFileSync(file,'utf8');
-  const references=name.endsWith('.html') ? [...source.matchAll(/(?:href|src)="([^"]+)"/g)].map(match=>match[1]) : [...source.matchAll(/url\(["']?([^"')]+)["']?\)/g)].map(match=>match[1]);
+  // HTML links/assets, CSS url(...) references, and local ES-module imports.
+  const references = name.endsWith('.html')
+   ? [...source.matchAll(/(?:href|src)="([^"]+)"/g)].map(match=>match[1])
+   : name.endsWith('.css')
+    ? [...source.matchAll(/url\(["']?([^"')]+)["']?\)/g)].map(match=>match[1])
+    : [...source.matchAll(/^\s*import\s+(?:[\s\S]*?\s+from\s+)?['"]([^'"]+)['"]/gm)].map(match=>match[1]);
   for(const reference of references){
    if(/^(https?:|#|data:)/.test(reference))continue;
    exactPath(reference.startsWith('/')?path.join(root,reference):path.resolve(path.dirname(file),reference));
@@ -43,4 +49,4 @@ function walk(directory) {
  }
 }
 walk(root);
-console.log('PASS: '+checked+' local asset/navigation references exist with exact casing; HTML tags balanced, IDs unique, shared CSS present.');
+console.log('PASS: '+checked+' exact-case HTML/CSS assets and JS imports; HTML tags balanced, IDs unique, shared CSS present.');
