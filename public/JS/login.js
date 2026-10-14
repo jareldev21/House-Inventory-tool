@@ -1,5 +1,5 @@
 import { auth } from './firebase.js';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 
 const loginForm = document.getElementById('login-form');
 const googleButton = document.getElementById('google-sign-in');
@@ -33,14 +33,11 @@ function prefersRedirect() {
 // Complete a previous redirect before offering another sign-in attempt.
 setBusy(true);
 getRedirectResult(auth).then(result => {
-    if (result?.user || auth.currentUser) window.location.replace('home.html');
+    if (result?.user) window.location.replace('home.html');
 }).catch(error => {
     console.error('Google redirect sign-in failed:', error);
     message.textContent = friendlyError(error);
 }).finally(() => { setBusy(false); });
-onAuthStateChanged(auth, user => {
-    if (user && !busy) window.location.replace('home.html');
-});
 loginForm.addEventListener('submit', async event => {
     event.preventDefault();
     if (busy) return;
