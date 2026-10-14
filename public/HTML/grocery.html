@@ -42,8 +42,13 @@
 </main>
 <dialog id="boughtDialog" aria-labelledby="boughtTitle">
 <form id="boughtForm"><h2 id="boughtTitle">Mark as bought</h2>
-<p id="boughtItemName"></p><label for="boughtPrice">Price paid (₱)</label>
-<input id="boughtPrice" type="number" min="0" max="999999999" step="0.01" inputmode="decimal" placeholder="0.00" required>
+<p id="boughtItemName"></p>
+<label for="boughtQuantity">Quantity bought (optional)</label>
+<input id="boughtQuantity" type="number" min="0.001" max="999999" step="any" inputmode="decimal" placeholder="e.g. 2 or 1.5">
+<p class="form-hint">Leave quantity blank if you did not count it. You can add it later.</p>
+<label for="boughtPrice">Total price paid (₱, optional)</label>
+<input id="boughtPrice" type="number" min="0" max="999999999" step="0.01" inputmode="decimal" placeholder="e.g. 150.00">
+<p class="form-hint">You can also leave the price blank and mark this item as bought.</p>
 <p class="form-error" id="boughtError" role="alert"></p>
 <div class="modal-buttons"><button type="button" id="cancelBought">Cancel</button><button class="primary" type="submit">Save purchase</button></div></form>
 </dialog>
