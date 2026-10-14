@@ -1,66 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Grocery | Our Home Hub</title>
-<link rel="stylesheet" href="../CSS/main.css"><link rel="stylesheet" href="../CSS/Grocery.css">
-<link rel="icon" type="image/svg+xml" href="../Files/branding/logo.svg">
-<script type="module" src="../JS/grocery.js"></script>
-</head>
-<body>
-<header>
-<a class="logo-area" href="home.html"><img src="../Files/branding/logo.svg" alt="" class="Herologo"><span>Our Home Hub</span></a>
-<nav class="navigationlinks" aria-label="Main navigation">
-<a href="home.html" class="nav-link">Home</a><a href="inventory.html" class="nav-link">Inventory</a>
-<a href="grocery.html" class="nav-link" aria-current="page">Grocery</a>
-<button id="logout-button" type="button">Logout</button>
-</nav>
-</header>
-<section class="hero"><p class="eyebrow">Shopping day</p><h1>Grocery List</h1><p>Bring everything you need home.</p></section>
-<main class="grocery-page">
-<section class="grocery-panel">
-<h2>Add from your inventory</h2><p>Import the items you need from your active inventory. Items already on the list will not be duplicated.</p>
-<div class="grocery-actions">
-<button type="button" id="importLow" disabled>+ Add all Low Stock</button>
-<button type="button" id="importUnavailable" disabled>+ Add all Unavailable</button>
-</div></section>
-<section class="grocery-panel">
-<h2>Add a shopping item</h2><p>Manually added items stay on this grocery list until you choose to add them to inventory.</p>
-<form id="addGroceryForm" class="grocery-actions">
-<label class="visually-hidden" for="groceryName">Item name</label>
-<input id="groceryName" placeholder="e.g. Milk, Eggs, Bread" maxlength="200" required>
-<button class="primary" type="submit" id="addGroceryBtn" disabled>+ Add Item</button>
-</form></section>
-<section class="grocery-panel" aria-labelledby="shoppingTitle">
-<div class="grocery-heading"><div><h2 id="shoppingTitle">Today's shopping</h2><p id="groceryCount">0 items</p></div><p id="groceryTotal"></p></div>
-<p id="groceryMessage" role="status" aria-live="polite">Loading your list…</p>
-<button type="button" id="retryGrocery" hidden>Retry loading</button>
-<p class="grocery-reorder-help">Drag the grip handles to rearrange your shopping list, or use up/down arrow keys.</p>
-<ul id="groceryList" class="grocery-list"></ul>
-<p id="groceryEmpty" hidden>No items yet. Add an item or import items from your inventory.</p>
-</section>
-</main>
-<dialog id="boughtDialog" aria-labelledby="boughtTitle">
-<form id="boughtForm"><h2 id="boughtTitle">Mark as bought</h2>
-<p id="boughtItemName"></p>
-<label for="boughtQuantity">Quantity bought (optional)</label>
-<input id="boughtQuantity" type="number" min="0.001" max="999999" step="any" inputmode="decimal" placeholder="e.g. 2 or 1.5">
-<p class="form-hint">Leave quantity blank if you did not count it. You can add it later.</p>
-<label for="boughtPrice">Total price paid (₱, optional)</label>
-<input id="boughtPrice" type="number" min="0" max="999999999" step="0.01" inputmode="decimal" placeholder="e.g. 150.00">
-<p class="form-hint">You can also leave the price blank and mark this item as bought.</p>
-<p class="form-error" id="boughtError" role="alert"></p>
-<div class="modal-buttons"><button type="button" id="cancelBought">Cancel</button><button class="primary" type="submit">Save purchase</button></div></form>
-</dialog>
-<dialog id="inventoryDialog" aria-labelledby="inventoryTitle">
-<form id="inventoryForm"><h2 id="inventoryTitle">Add to inventory</h2>
-<p id="inventoryItemName"></p>
-<label for="inventoryCategory">Category</label><select id="inventoryCategory" required></select>
-<label for="inventoryStatus">Stock status</label><select id="inventoryStatus" required>
-<option value="available">Available</option><option value="low">Low Stock</option><option value="unavailable">Unavailable</option>
-</select>
-<p class="form-error" id="inventoryError" role="alert"></p>
-<div class="modal-buttons"><button type="button" id="cancelInventory">Cancel</button><button class="primary" type="submit">Add to inventory</button></div></form>
-</dialog>
-</body>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Grocery | Our Home Hub</title>
+        <link rel="stylesheet" href="../CSS/main.css">
+        <link rel="stylesheet" href="../CSS/Grocery.css">
+        <link rel="icon" type="image/svg+xml" href="../Files/branding/logo.svg">
+        <script type="module" src="../JS/grocery.js"></script>
+    </head>
+    <body>
+        <!-- Shared navigation and sign-out. -->
+        <header>
+            <a class="logo-area" href="home.html"><img src="../Files/branding/logo.svg" alt="" class="Herologo"><span>Our Home Hub</span></a>
+            <nav class="navigationlinks" aria-label="Main navigation">
+                <a href="home.html" class="nav-link">Home</a>
+                <a href="inventory.html" class="nav-link">Inventory</a>
+                <a href="grocery.html" class="nav-link" aria-current="page">Grocery</a>
+                <button id="logout-button" type="button">Logout</button>
+            </nav>
+        </header>
+        <!-- Page heading. -->
+        <section class="hero">
+            <p class="eyebrow">Shopping day</p>
+            <h1>Grocery List</h1>
+            <p>Bring everything you need home.</p>
+        </section>
+        <!-- Grocery workspace: inventory imports, manual entries, shopping list. -->
+        <main class="grocery-page">
+            <!-- Import stock-status items from the active inventory. -->
+            <section class="grocery-panel">
+                <h2>Add from your inventory</h2>
+                <p>Import the items you need from your active inventory. Items already on the list will not be duplicated.</p>
+                <div class="grocery-actions">
+                    <button type="button" id="importLow" disabled>+ Add all Low Stock</button>
+                    <button type="button" id="importUnavailable" disabled>+ Add all Unavailable</button>
+                </div>
+            </section>
+            <section class="grocery-panel">
+                <h2>Add a shopping item</h2>
+                <p>Manually added items stay on this grocery list until you choose to add them to inventory.</p>
+                <!-- Manual entries stay grocery-only until explicitly transferred. -->
+                <form id="addGroceryForm" class="grocery-actions">
+                    <label class="visually-hidden" for="groceryName">Item name</label>
+                    <input id="groceryName" placeholder="e.g. Milk, Eggs, Bread" maxlength="200" required>
+                    <button class="primary" type="submit" id="addGroceryBtn" disabled>+ Add Item</button>
+                </form>
+            </section>
+            <!-- Saved shopping items are rendered into groceryList by grocery.js. -->
+            <section class="grocery-panel" aria-labelledby="shoppingTitle">
+                <div class="grocery-heading">
+                    <div>
+                        <h2 id="shoppingTitle">Today's shopping</h2>
+                        <p id="groceryCount">0 items</p>
+                    </div>
+                    <p id="groceryTotal"></p>
+                </div>
+                <p id="groceryMessage" role="status" aria-live="polite">Loading your list…</p>
+                <button type="button" id="retryGrocery" hidden>Retry loading</button>
+                <p class="grocery-reorder-help">Drag the grip handles to rearrange your shopping list, or use up/down arrow keys.</p>
+                <ul id="groceryList" class="grocery-list"></ul>
+                <p id="groceryEmpty" hidden>No items yet. Add an item or import items from your inventory.</p>
+            </section>
+        </main>
+        <!-- Bought/edit purchase modal: optional quantity and price. -->
+        <dialog id="boughtDialog" aria-labelledby="boughtTitle">
+            <form id="boughtForm">
+                <h2 id="boughtTitle">Mark as bought</h2>
+                <p id="boughtItemName"></p>
+                <label for="boughtQuantity">Quantity bought (optional)</label>
+                <input id="boughtQuantity" type="number" min="0.001" max="999999" step="any" inputmode="decimal" placeholder="e.g. 2 or 1.5">
+                <p class="form-hint">Leave quantity blank if you did not count it. You can add it later.</p>
+                <label for="boughtPrice">Total price paid (₱, optional)</label>
+                <input id="boughtPrice" type="number" min="0" max="999999999" step="0.01" inputmode="decimal" placeholder="e.g. 150.00">
+                <p class="form-hint">You can also leave the price blank and mark this item as bought.</p>
+                <p class="form-error" id="boughtError" role="alert"></p>
+                <div class="modal-buttons">
+                    <button type="button" id="cancelBought">Cancel</button>
+                    <button class="primary" type="submit">Save purchase</button>
+                </div>
+            </form>
+        </dialog>
+        <!-- Explicit grocery-to-inventory transfer modal. -->
+        <dialog id="inventoryDialog" aria-labelledby="inventoryTitle">
+            <form id="inventoryForm">
+                <h2 id="inventoryTitle">Add to inventory</h2>
+                <p id="inventoryItemName"></p>
+                <label for="inventoryCategory">Category</label>
+                <select id="inventoryCategory" required></select>
+                <label for="inventoryStatus">Stock status</label>
+                <select id="inventoryStatus" required>
+                    <option value="available">Available</option>
+                    <option value="low">Low Stock</option>
+                    <option value="unavailable">Unavailable</option>
+                </select>
+                <p class="form-error" id="inventoryError" role="alert"></p>
+                <div class="modal-buttons">
+                    <button type="button" id="cancelInventory">Cancel</button>
+                    <button class="primary" type="submit">Add to inventory</button>
+                </div>
+            </form>
+        </dialog>
+    </body>
 </html>
