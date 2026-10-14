@@ -239,14 +239,25 @@ const mock = name => fs.readFileSync(path.join(__dirname,name+'.mock.js'),'utf8'
   await page.getByRole('heading',{name:'Personal inventory',exact:true}).waitFor();
   await page.locator('.item-card').filter({hasText:'Legacy Rice'}).getByText('Unavailable',{exact:true}).waitFor();
   await page.goto('http://127.0.0.1:4173/HTML/home.html');
-  for(const [link,url] of [['Open To-do List','todos.html'],['Find/Add Places','placestogo.html']]) {
-   await page.getByRole('link',{name:link}).click();
-   await page.waitForURL('**/'+url);
-   await page.getByRole('heading',{name:'Page Not Found'}).waitFor();
-   await page.getByRole('link',{name:'Return to homepage'}).click();
-   await page.waitForURL('**/home.html');
-  }
-  for(const file of ['home.html','index.html','todos.html','placestogo.html','404.html']) {
+  await page.getByRole('link',{name:'Open Grocery List'}).click();
+  await page.waitForURL('**/grocery.html');
+  await page.getByText('List loaded.',{exact:false}).waitFor();
+  await page.locator('#importLow').click();
+  await page.locator('#groceryList .grocery-item').first().waitFor();
+  await page.locator('#groceryName').fill('Dish soap');
+  await page.locator('#addGroceryBtn').click();
+  await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).waitFor();
+  await page.reload();
+  await page.getByText('Dish soap',{exact:true}).waitFor();
+  await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).getByRole('button',{name:'Bought'}).click();
+  await page.locator('#boughtPrice').fill('35.50');
+  await page.locator('#boughtForm button[type="submit"]').click();
+  await page.getByText('Bought · ₱35.50',{exact:false}).waitFor();
+  await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).getByRole('button',{name:'Remove'}).click();
+  await page.getByText('Dish soap',{exact:true}).waitFor({state:'hidden'});
+  await page.getByRole('link',{name:'Home'}).click();
+  await page.waitForURL('**/home.html');
+  for(const file of ['home.html','index.html','grocery.html','404.html']) {
    for(const width of [1440,768,390,320]) {
     await page.setViewportSize({width,height:1000});
     await page.goto('http://127.0.0.1:4173/HTML/'+file);
@@ -264,7 +275,7 @@ const mock = name => fs.readFileSync(path.join(__dirname,name+'.mock.js'),'utf8'
   await page.locator('#google-sign-in').click();
   await page.waitForURL('**/home.html');
   assert.deepEqual(errors,[]);
-  console.log('PASS: mocked Google/password login, shared inventory creation/join/edit, personal preservation, category/item CRUD, manual statuses, reload, save/load failures, stale-tab protection, user isolation, placeholders, responsive layouts; no uncaught page errors.');
+  console.log('PASS: mocked Google/password login, shared inventory creation/join/edit, personal preservation, category/item CRUD, manual statuses, reload, save/load failures, stale-tab protection, user isolation, grocery CRUD and persistence, responsive layouts; no uncaught page errors.');
  } finally { await browser?.close(); server.close(); }
 })().catch(error=>{console.error(error);process.exitCode=1;});
 
