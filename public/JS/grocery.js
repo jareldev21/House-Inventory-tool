@@ -5,34 +5,14 @@ import { auth, db } from './firebase.js';
 import { doc, getDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 import { normalizeCategories, stockStatus, inventoryVersion } from './inventory-model.js';
+import { money, quantityLabel, priceLabel, optionalNumber, validateList, reorderedList } from './grocery-model.js';
 
-// 1. DOM references, session flags, data snapshots, and formatting helpers.
+// 1. DOM references and session/data snapshots; pure helpers are in grocery-model.js.
 const byId = id => document.getElementById(id);
 let user = null, session = 0, ready = false, saving = false;
 let items = [], version = inventoryVersion([]), categories = [], categoryVersion = inventoryVersion([]);
 let inventoryId = null, selectedItemId = null;
 let groceryDrag = null;
-const money = value => '₱' + Number(value).toLocaleString('en-PH', {minimumFractionDigits:2,maximumFractionDigits:2});
-
-const quantityLabel = item => item.boughtQuantity == null ? 'Quantity not recorded' : 'Quantity: ' + item.boughtQuantity;
-const priceLabel = item => item.price == null ? 'Price not recorded' : money(item.price);
-/**
- * Purchase validation: Parse an optional numeric form field; an empty string becomes null rather than zero.
- * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
- */
-function optionalNumber(input, label, max, decimalPlaces, positive = false) {
-    const raw = input.value.trim();
-    if (raw === '') return null;
-    const decimalDigits = raw.includes('.') ? raw.split('.')[1].length : 0;
-    const valid = /^[0-9]+(?:\.[0-9]+)?$/.test(raw);
-    const value = Number(raw);
-    if (!valid || decimalDigits > decimalPlaces || !Number.isFinite(value)
-        || (positive ? value <= 0 : value < 0) || value > max) {
-        throw new Error(label + ' must be a valid ' + (positive ? 'positive' : 'nonnegative')
-            + ' number with up to ' + decimalPlaces + ' decimal places.');
-    }
-    return value;
-}
 const userRef = () => doc(db, 'users', user.uid);
 const activeRef = () => inventoryId ? doc(db, 'inventories', inventoryId) : userRef();
 /**
@@ -42,21 +22,6 @@ const activeRef = () => inventoryId ? doc(db, 'inventories', inventoryId) : user
 function feedback(text, error = false) {
     byId('groceryMessage').textContent = text;
     byId('groceryMessage').classList.toggle('error', error);
-}
-/**
- * Stored-data validation: Reject unsupported or duplicate grocery entries before allowing edits.
- * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
- */
-// 2. Stored-record validation and UI control helpers.
-function validateList(records) {
-    if (!Array.isArray(records)) throw Error('Grocery list has an unsupported format.');
-    const ids = new Set();
-    for (const item of records) {
-        if (!item || typeof item.id !== 'string' || ids.has(item.id) || typeof item.name !== 'string' || !['pending','bought','unavailable'].includes(item.state))
-            throw Error('Grocery list contains invalid data. No changes were made.');
-        ids.add(item.id);
-    }
-    return records;
 }
 /**
  * UI state: Gate mutations and drag grips while loading or saving.
@@ -86,23 +51,8 @@ function node(tag, className, value) {
 function action(label, callback) {
     const el = node('button', '', label); el.type = 'button'; el.disabled = !ready || saving; el.addEventListener('click', callback); return el;
 }
-// 3. Grocery drag-and-drop: reorder existing entries, then save.
+// 3. Grocery drag-and-drop: calculate order in grocery-model.js, then save.
 // Persist display order by rearranging the same groceryItems array.
-/**
- * Pure ordering logic: Build a reordered array of existing grocery entries without mutating the current state.
- * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
- */
-function reorderedList(id, targetId, after) {
-    if (id === targetId) return items;
-    const result = [...items];
-    const sourceIndex = result.findIndex(item => item.id === id);
-    const destinationIndex = result.findIndex(item => item.id === targetId);
-    if (sourceIndex === -1 || destinationIndex === -1) return items;
-    const [moving] = result.splice(sourceIndex, 1);
-    const index = result.findIndex(item => item.id === targetId);
-    result.splice(index + Number(after), 0, moving);
-    return result;
-}
 /**
  * Drag lifecycle: Clear highlighted destinations, the preview, and pointer state.
  * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
@@ -157,7 +107,7 @@ function groceryHandle(item) {
         const target = groceryDrag.active ? groceryDrag.target : null;
         clearGroceryDrag();
         if (target && ready && !saving) {
-            const next = reorderedList(item.id,target.id,target.after);
+            const next = reorderedList(items, item.id,target.id,target.after);
             if (next !== items) await saveList(next);
         }
     });
@@ -172,7 +122,7 @@ function groceryHandle(item) {
         const target = items[index + delta];
         if (!target) return;
         event.preventDefault();
-        if (await saveList(reorderedList(item.id,target.id,delta > 0))) {
+        if (await saveList(reorderedList(items, item.id,target.id,delta > 0))) {
             [...document.querySelectorAll('.grocery-list .drag-handle')].find(el=>el.dataset.item===item.id)?.focus();
         }
     });
