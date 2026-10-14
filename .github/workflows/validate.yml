@@ -1,0 +1,23 @@
+name: Validate source structure and pure models
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - refactor/structure-and-developer-manual
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test inventory and grocery data models
+        run: node --test tests/inventory-model.test.mjs tests/grocery-model.test.mjs
+      - name: Check static HTML/CSS/JS references
+        run: node tests/static-check.cjs
