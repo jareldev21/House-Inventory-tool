@@ -13,8 +13,6 @@ let user = null, session = 0, ready = false, saving = false;
 let items = [], version = inventoryVersion([]), categories = [], categoryVersion = inventoryVersion([]);
 let inventoryId = null, selectedItemId = null;
 let groceryDrag = null;
-const userRef = () => doc(db, 'users', user.uid);
-const activeRef = () => inventoryId ? doc(db, 'inventories', inventoryId) : userRef();
 /**
  * UI feedback: Show load/save errors and success messages without modifying Firestore.
  * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
@@ -51,7 +49,7 @@ function node(tag, className, value) {
 function action(label, callback) {
     const el = node('button', '', label); el.type = 'button'; el.disabled = !ready || saving; el.addEventListener('click', callback); return el;
 }
-// 3. Grocery drag-and-drop: calculate order in grocery-model.js, then save.
+// 2. Grocery drag-and-drop: calculate order in grocery-model.js, then save.
 // Persist display order by rearranging the same groceryItems array.
 /**
  * Drag lifecycle: Clear highlighted destinations, the preview, and pointer state.
@@ -132,7 +130,7 @@ function groceryHandle(item) {
  * Rendering: Rebuild rows, action buttons, item totals, and recorded spending from groceries.
  * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
  */
-// 4. Grocery list rendering and summary totals.
+// 3. Grocery list rendering and summary totals.
 function render() {
     const list = byId('groceryList');
     list.replaceChildren();
@@ -167,7 +165,7 @@ function render() {
  * Firestore read: Read the user's private grocery list and current inventory snapshot, then process optional imports.
  * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
  */
-// 5. Session lifecycle and Firestore reads.
+// 4. Session lifecycle and Firestore reads.
 async function load() {
     if (!user || saving) return;
     const token = ++session, uid = user.uid;
@@ -209,7 +207,7 @@ onAuthStateChanged(auth, value => {
  * Firestore write: Persist groceryItems transactionally with conflict detection and no premature UI commit.
  * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
  */
-// 6. Transactional grocery CRUD and inventory status imports.
+// 5. Transactional grocery CRUD and inventory status imports.
 async function saveList(next) {
     if (!ready || saving || !user) return false;
     const token=session, uid=user.uid, expected=version;
@@ -260,7 +258,7 @@ async function importStatus(status) {
     if (!additions.length) {feedback('No new ' + (status==='low'?'low-stock':'unavailable') + ' items to add.');return;}
     if (await saveList([...items,...additions])) feedback('Added '+additions.length+' items from inventory.');
 }
-// 7. Grocery import and manual-entry event handlers.
+// 6. Grocery import and manual-entry event handlers.
 byId('importLow').addEventListener('click',()=>importStatus('low'));
 byId('importUnavailable').addEventListener('click',()=>importStatus('unavailable'));
 byId('retryGrocery').addEventListener('click',load);
@@ -276,7 +274,7 @@ byId('addGroceryForm').addEventListener('submit',async event=>{
  * Purchase form: Prefill the Bought dialog for new purchases or later corrections.
  * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
  */
-// 8. Bought dialog: optional price and quantity (null means not recorded).
+// 7. Bought dialog: optional price and quantity (null means not recorded).
 function openBought(item) {
     if (!ready || saving) return;
     selectedItemId=item.id;
@@ -304,7 +302,7 @@ byId('boughtForm').addEventListener('submit',async event=>{
  * Optional inventory transfer: Open the explicit manual-grocery-item transfer form with available categories.
  * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
  */
-// 9. Explicit grocery-to-inventory transfer. Never update stock automatically on purchase.
+// 8. Explicit grocery-to-inventory transfer. Never update stock automatically on purchase.
 function openInventory(item) {
     if (!ready||saving||item.source||item.inventoryAdded) return;
     selectedItemId=item.id;
@@ -359,7 +357,7 @@ byId('inventoryForm').addEventListener('submit',async event=>{
         }
     }finally{if(token===session){saving=false;render();}}
 });
-// 10. Session exit and initial UI render.
+// 9. Session exit and initial UI render.
 byId('logout-button').addEventListener('click',async()=>{
     if(saving)return;
     try{await signOut(auth);}catch(error){console.error(error);feedback('Could not sign out.',true);}
