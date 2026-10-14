@@ -1,8 +1,12 @@
+// GROCERY CONTROLLER: private shopping list, stock imports, purchase tracking, and ordering.
+// Grocery state lives in users/{uid}.groceryItems; categories are read from the active inventory.
+
 import { auth, db } from './firebase.js';
 import { doc, getDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 import { normalizeCategories, stockStatus, inventoryVersion } from './inventory-model.js';
 
+// 1. DOM references, session flags, data snapshots, and formatting helpers.
 const byId = id => document.getElementById(id);
 let user = null, session = 0, ready = false, saving = false;
 let items = [], version = inventoryVersion([]), categories = [], categoryVersion = inventoryVersion([]);
@@ -12,6 +16,10 @@ const money = value => '₱' + Number(value).toLocaleString('en-PH', {minimumFra
 
 const quantityLabel = item => item.boughtQuantity == null ? 'Quantity not recorded' : 'Quantity: ' + item.boughtQuantity;
 const priceLabel = item => item.price == null ? 'Price not recorded' : money(item.price);
+/**
+ * Purchase validation: Parse an optional numeric form field; an empty string becomes null rather than zero.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function optionalNumber(input, label, max, decimalPlaces, positive = false) {
     const raw = input.value.trim();
     if (raw === '') return null;
@@ -27,10 +35,19 @@ function optionalNumber(input, label, max, decimalPlaces, positive = false) {
 }
 const userRef = () => doc(db, 'users', user.uid);
 const activeRef = () => inventoryId ? doc(db, 'inventories', inventoryId) : userRef();
+/**
+ * UI feedback: Show load/save errors and success messages without modifying Firestore.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function feedback(text, error = false) {
     byId('groceryMessage').textContent = text;
     byId('groceryMessage').classList.toggle('error', error);
 }
+/**
+ * Stored-data validation: Reject unsupported or duplicate grocery entries before allowing edits.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
+// 2. Stored-record validation and UI control helpers.
 function validateList(records) {
     if (!Array.isArray(records)) throw Error('Grocery list has an unsupported format.');
     const ids = new Set();
@@ -41,6 +58,10 @@ function validateList(records) {
     }
     return records;
 }
+/**
+ * UI state: Gate mutations and drag grips while loading or saving.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function controls() {
     const disabled = !ready || saving;
     document.querySelectorAll('#importLow,#importUnavailable,#addGroceryBtn,#groceryName').forEach(node => node.disabled = disabled);
@@ -48,16 +69,29 @@ function controls() {
     document.querySelectorAll('dialog input,dialog select,dialog button').forEach(node => node.disabled = disabled);
     byId('logout-button').disabled = saving;
 }
+/**
+ * DOM helper: Create elements using textContent, never untrusted HTML.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function node(tag, className, value) {
     const el = document.createElement(tag);
     if (className) el.className = className;
     if (value != null) el.textContent = value;
     return el;
 }
+/**
+ * DOM helper: Create an enabled/disabled button wired to an action callback.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function action(label, callback) {
     const el = node('button', '', label); el.type = 'button'; el.disabled = !ready || saving; el.addEventListener('click', callback); return el;
 }
+// 3. Grocery drag-and-drop: reorder existing entries, then save.
 // Persist display order by rearranging the same groceryItems array.
+/**
+ * Pure ordering logic: Build a reordered array of existing grocery entries without mutating the current state.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function reorderedList(id, targetId, after) {
     if (id === targetId) return items;
     const result = [...items];
@@ -69,12 +103,20 @@ function reorderedList(id, targetId, after) {
     result.splice(index + Number(after), 0, moving);
     return result;
 }
+/**
+ * Drag lifecycle: Clear highlighted destinations, the preview, and pointer state.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function clearGroceryDrag() {
     document.querySelectorAll('.grocery-drop-target').forEach(el => el.classList.remove('grocery-drop-target'));
     groceryDrag?.ghost?.remove();
     groceryDrag?.handle?.classList.remove('dragging');
     groceryDrag = null;
 }
+/**
+ * Drag/keyboard controls: Create the shopping-row grip and send completed moves through saveList.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function groceryHandle(item) {
     const handle = node('button', 'drag-handle', '⠿');
     handle.type = 'button';
@@ -136,6 +178,11 @@ function groceryHandle(item) {
     });
     return handle;
 }
+/**
+ * Rendering: Rebuild rows, action buttons, item totals, and recorded spending from groceries.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
+// 4. Grocery list rendering and summary totals.
 function render() {
     const list = byId('groceryList');
     list.replaceChildren();
@@ -166,6 +213,11 @@ function render() {
     byId('groceryEmpty').hidden = !ready || items.length > 0;
     controls();
 }
+/**
+ * Firestore read: Read the user's private grocery list and current inventory snapshot, then process optional imports.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
+// 5. Session lifecycle and Firestore reads.
 async function load() {
     if (!user || saving) return;
     const token = ++session, uid = user.uid;
@@ -196,12 +248,18 @@ async function load() {
         byId('retryGrocery').hidden = false;
     } finally { if (token === session) render(); }
 }
+// Authentication event: clear UI when account changes; reload only after sign-in.
 onAuthStateChanged(auth, value => {
     session++; clearGroceryDrag(); user=value; ready=false; saving=false; inventoryId=null; items=[]; categories=[];
     byId('boughtDialog').close(); byId('inventoryDialog').close(); render();
     if (!value) { location.replace('index.html'); return; }
     load();
 });
+/**
+ * Firestore write: Persist groceryItems transactionally with conflict detection and no premature UI commit.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
+// 6. Transactional grocery CRUD and inventory status imports.
 async function saveList(next) {
     if (!ready || saving || !user) return false;
     const token=session, uid=user.uid, expected=version;
@@ -227,9 +285,17 @@ async function saveList(next) {
         return false;
     } finally {if(token===session){saving=false;render();}}
 }
+/**
+ * Grocery mutation: Update one shopping item while preserving its other saved fields.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 async function changeItem(id, changes) {
     await saveList(items.map(item => item.id===id ? {...item,...changes} : item));
 }
+/**
+ * Inventory-to-grocery import: Append matching low/unavailable inventory records without duplicating source IDs.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 async function importStatus(status) {
     if (!ready || saving) return;
     const additions=[];
@@ -244,6 +310,7 @@ async function importStatus(status) {
     if (!additions.length) {feedback('No new ' + (status==='low'?'low-stock':'unavailable') + ' items to add.');return;}
     if (await saveList([...items,...additions])) feedback('Added '+additions.length+' items from inventory.');
 }
+// 7. Grocery import and manual-entry event handlers.
 byId('importLow').addEventListener('click',()=>importStatus('low'));
 byId('importUnavailable').addEventListener('click',()=>importStatus('unavailable'));
 byId('retryGrocery').addEventListener('click',load);
@@ -255,6 +322,11 @@ byId('addGroceryForm').addEventListener('submit',async event=>{
         byId('addGroceryForm').reset();
     }
 });
+/**
+ * Purchase form: Prefill the Bought dialog for new purchases or later corrections.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
+// 8. Bought dialog: optional price and quantity (null means not recorded).
 function openBought(item) {
     if (!ready || saving) return;
     selectedItemId=item.id;
@@ -266,6 +338,7 @@ function openBought(item) {
     byId('boughtDialog').showModal();
 }
 byId('cancelBought').addEventListener('click',()=>byId('boughtDialog').close());
+// Purchase submit handler: mark bought only after a successful saveList call.
 byId('boughtForm').addEventListener('submit',async event=>{
     event.preventDefault();
     try {
@@ -277,6 +350,11 @@ byId('boughtForm').addEventListener('submit',async event=>{
         byId('boughtError').textContent = error.message;
     }
 });
+/**
+ * Optional inventory transfer: Open the explicit manual-grocery-item transfer form with available categories.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
+// 9. Explicit grocery-to-inventory transfer. Never update stock automatically on purchase.
 function openInventory(item) {
     if (!ready||saving||item.source||item.inventoryAdded) return;
     selectedItemId=item.id;
@@ -289,6 +367,7 @@ function openInventory(item) {
     byId('inventoryDialog').showModal();
 }
 byId('cancelInventory').addEventListener('click',()=>byId('inventoryDialog').close());
+// Transfer submit handler: one transaction updates inventory and the user's grocery flag.
 byId('inventoryForm').addEventListener('submit',async event=>{
     event.preventDefault();
     if(!ready||saving||!user)return;
@@ -330,6 +409,7 @@ byId('inventoryForm').addEventListener('submit',async event=>{
         }
     }finally{if(token===session){saving=false;render();}}
 });
+// 10. Session exit and initial UI render.
 byId('logout-button').addEventListener('click',async()=>{
     if(saving)return;
     try{await signOut(auth);}catch(error){console.error(error);feedback('Could not sign out.',true);}
