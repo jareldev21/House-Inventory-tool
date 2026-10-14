@@ -4,7 +4,7 @@ import { getAuth } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
 const firebaseConfig = {
     apiKey: "AIzaSyAUiAsV7mLbwgAedq6KPafjLOwrNYFKyYw",
-    authDomain: "jareljaz-house.firebaseapp.com",
+    authDomain: "jareljaz-house.web.app",
     projectId: "jareljaz-house",
     storageBucket: "jareljaz-house.firebasestorage.app",
     messagingSenderId: "127422481122",
