@@ -10,3 +10,15 @@
 .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 #groceryMessage{font-size:.9rem;margin:.5rem 0}#groceryEmpty{padding:1rem;text-align:center}
 @media(max-width:550px){.grocery-actions button{flex:1 1 100%}.grocery-item-actions{width:100%}.grocery-item-actions button{flex:1 1 auto}}
+
+/* Drag handles are explicit so taps on purchase actions still work. */
+.grocery-item{justify-content:flex-start}
+.grocery-item>div:nth-child(2){flex:1 1 155px;min-width:0}
+.grocery-item-actions{flex:0 1 auto}
+.grocery-reorder-help{font-size:.83rem;margin:.65rem 0 0}
+.grocery-item .drag-handle{touch-action:none;user-select:none;-webkit-user-select:none;flex:0 0 40px;min-width:40px;width:40px;min-height:46px;padding:0;background:#ffffff10;border:1px dashed #9774bc;border-radius:10px;color:#dcc4f7;cursor:grab;font-size:1.45rem}
+.grocery-item .drag-handle.dragging{cursor:grabbing;background:#614090}
+.grocery-item .drag-handle:disabled{cursor:not-allowed}
+.grocery-item.grocery-drop-target{outline:3px solid var(--accent);outline-offset:-3px}
+.grocery-drag-preview{position:fixed;z-index:5000;max-width:min(65vw,240px);padding:.55rem .8rem;border:2px solid var(--accent);border-radius:12px;background:#4e3277;color:#fff;pointer-events:none;overflow-wrap:anywhere;box-shadow:0 8px 25px #0008}
+@media(max-width:550px){.grocery-item-actions{flex:1 1 100%;width:100%;padding-left:48px}}
