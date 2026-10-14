@@ -1,14 +1,17 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // 1. Access helpers shared by collection rules.
     function signedIn() { return request.auth != null; }
     function validInventoryId(id) { return id.matches('^[a-f0-9]{32}$'); }
 
+    // 2. Private user documents: inventory, shopping list, and connection preference.
     // Personal data and connection preference remain private to their user.
     match /users/{uid} {
       allow read, write: if signedIn() && request.auth.uid == uid;
     }
 
+    // 3. Shared inventory: signed-in ID holders may read/join, members edit categories.
     match /inventories/{id} {
       // An unguessable ID is a sharing code: possessing it allows a signed-in
       // user to read this document and join. Enumeration is never allowed.

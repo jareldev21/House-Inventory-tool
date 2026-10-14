@@ -1,7 +1,14 @@
+// INVENTORY SHARING SERVICE: Firestore transactions only; no page rendering.
+// Each helper preserves the user's personal inventory and relies on Firestore rules.
+
 import { db } from './firebase.js';
 import { doc, runTransaction } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
 import { normalizeCategories, inventoryVersion } from './inventory-model.js';
 
+/**
+ * Sharing validation: Validate the 32-character lowercase hexadecimal ID of a shared inventory.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 export function parseInventoryId(value) {
     const id = value.trim().toLowerCase();
     if (!/^[a-f0-9]{32}$/.test(id)) throw new Error('Enter the complete 32-character inventory ID.');
@@ -9,6 +16,10 @@ export function parseInventoryId(value) {
 }
 
 // Copy, never move, the user's personal inventory into a shared document.
+/**
+ * Sharing transaction: Copy personal categories into a new shared document and link it to the user.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 export async function createSharedInventory(user, expectedVersion) {
     const id = crypto.randomUUID().replaceAll('-', '');
     await runTransaction(db, async transaction => {
@@ -25,6 +36,10 @@ export async function createSharedInventory(user, expectedVersion) {
     return id;
 }
 
+/**
+ * Sharing transaction: Join an existing inventory and set it active without replacing personal categories.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 export async function joinSharedInventory(user, value) {
     const id = parseInventoryId(value);
     await runTransaction(db, async transaction => {
@@ -42,6 +57,10 @@ export async function joinSharedInventory(user, value) {
     return id;
 }
 
+/**
+ * Sharing transaction: Clear the user's active shared inventory selection without deleting shared data.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 export async function selectPersonalInventory(user) {
     await runTransaction(db, async transaction => {
         transaction.set(doc(db, 'users', user.uid), { activeInventoryId: null }, { merge: true });

@@ -3,81 +3,52 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
         <title>Home Page</title>
-
-            <link rel="stylesheet" href="../CSS/main.css">
-            <link rel="stylesheet" href="../CSS/Home.css">
-            <link rel="icon" type="image/svg+xml" href="../Files/branding/logo.svg">
-
+        <link rel="stylesheet" href="../CSS/main.css">
+        <link rel="stylesheet" href="../CSS/Home.css">
+        <link rel="icon" type="image/svg+xml" href="../Files/branding/logo.svg">
     </head>
-
     <body>
-
+        <!-- Shared header and primary navigation. -->
         <header>
-        <a class="logo-area" href="home.html"><img src="../Files/branding/logo.svg" alt="" class="Herologo"><span>Our Home Hub</span></a>
-        <nav class="navigationlinks" aria-label="Main navigation">
-            <a href="home.html" class="nav-link" aria-current="page">Home</a>
-            <a href="inventory.html" class="nav-link">Inventory</a>
-            <a href="grocery.html" class="nav-link">Grocery</a>
-            <button id="logout-button" type="button">Logout</button>
-        </nav>
-    </header>
-
+            <a class="logo-area" href="home.html"><img src="../Files/branding/logo.svg" alt="" class="Herologo"><span>Our Home Hub</span></a>
+            <nav class="navigationlinks" aria-label="Main navigation">
+                <a href="home.html" class="nav-link" aria-current="page">Home</a>
+                <a href="inventory.html" class="nav-link">Inventory</a>
+                <a href="grocery.html" class="nav-link">Grocery</a>
+                <button id="logout-button" type="button">Logout</button>
+            </nav>
+        </header>
+        <!-- Dashboard: welcome section and feature entry points. -->
         <main class="homepage">
-
             <section class="welcome-section">
-
                 <h2>Welcome Home!</h2>
                 <p>What would you like to do today?</p>
-
             </section>
-
-        
             <section class="Dashboard">
-
                 <h2>YOUR DASHBOARD</h2>
-
                 <p>Get quick access to the tools you need.</p>
-
             </section>
-
+            <!-- Feature cards link to the Inventory and Grocery pages. -->
             <section class="cardssection">
-
-                <div class="feature-card Inventory">
-
+                <article class="feature-card Inventory">
                     <img src="../Files/branding/inventory.svg" alt="Inventory Icon" class="card-icon inventoryicon">
-
                     <div class="card-content">
-                    
                         <h2>Check Inventory</h2>
-
                         <a href="inventory.html" class="card-button">Open Inventory →</a>
-
                     </div>
-                </div>
-
-                <div class="feature-card Grocery">
+                </article>
+                <article class="feature-card Grocery">
                     <img src="../Files/branding/food.svg" alt="" class="card-icon">
                     <div class="card-content">
                         <h2>Grocery Shopping</h2>
                         <p>Plan today's shopping, track purchases and prices.</p>
                         <a href="grocery.html" class="card-button">Open Grocery List →</a>
                     </div>
-                </div>
-
+                </article>
             </section>
-
-
         </main>
-
-
-    <footer>
-
-    </footer>
-
-    <script type="module" src="../JS/home.js"></script>
-
+        <footer></footer>
+        <script type="module" src="../JS/home.js"></script>
     </body>
-
 </html>
