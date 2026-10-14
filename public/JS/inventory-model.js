@@ -63,3 +63,35 @@ export function inventoryVersion(value) {
     }
     return JSON.stringify(value);
 }
+
+// Order is defined by array position; preserve all category/item fields.
+export function moveCategory(records, sourceId, destinationId, after = false) {
+    const sourceIndex = records.findIndex(category => category.id === sourceId);
+    const destinationIndex = records.findIndex(category => category.id === destinationId);
+    if (sourceIndex < 0 || destinationIndex < 0) throw new Error('Category not found. Refresh inventory.');
+    if (sourceId === destinationId) return records;
+    const result = [...records];
+    const [source] = result.splice(sourceIndex, 1);
+    const targetIndex = result.findIndex(category => category.id === destinationId);
+    result.splice(targetIndex + Number(after), 0, source);
+    return result;
+}
+
+export function moveItem(records, sourceCategoryId, itemId, targetCategoryId, targetItemId = null, after = false) {
+    const next = structuredClone(records);
+    const source = next.find(category => category.id === sourceCategoryId);
+    const destination = next.find(category => category.id === targetCategoryId);
+    if (!source || !destination) throw new Error('Category not found. Refresh inventory.');
+    const sourceIndex = source.items.findIndex(item => item.id === itemId);
+    if (sourceIndex < 0) throw new Error('Item not found. Refresh inventory.');
+    if (sourceCategoryId === targetCategoryId && targetItemId === itemId) return records;
+    // Validate the drop target before removing anything from the clone.
+    if (targetItemId !== null && !destination.items.some(item => item.id === targetItemId))
+        throw new Error('Drop target not found. Refresh inventory.');
+    const [moving] = source.items.splice(sourceIndex, 1);
+    const targetIndex = targetItemId === null
+        ? destination.items.length
+        : destination.items.findIndex(item => item.id === targetItemId) + Number(after);
+    destination.items.splice(targetIndex, 0, moving);
+    return next;
+}
