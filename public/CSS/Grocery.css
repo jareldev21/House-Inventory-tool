@@ -1,0 +1,12 @@
+.grocery-page{max-width:970px;margin:auto;padding:1.4rem clamp(16px,4vw,36px) 4rem;display:grid;gap:1rem}
+.grocery-panel{background:var(--panel);border:1px solid var(--border);padding:1.25rem;border-radius:18px;min-width:0}
+.grocery-panel h2{font-size:1.2rem}.grocery-panel>p{font-size:.9rem}
+.grocery-actions{display:flex;flex-wrap:wrap;gap:.65rem;margin-top:.9rem}.grocery-actions input{flex:1 1 250px}.grocery-actions button{flex:0 1 auto}
+.grocery-heading{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}.grocery-heading p{font-size:.9rem}
+.grocery-list{list-style:none;padding:0;margin:1rem 0 0;display:grid;gap:.65rem}
+.grocery-item{background:#ffffff0a;border:1px solid #ffffff1a;border-radius:13px;padding:.85rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.7rem}
+.grocery-name{font-weight:600;overflow-wrap:anywhere}.grocery-meta{font-size:.82rem}.grocery-item-actions{display:flex;flex-wrap:wrap;gap:.4rem}
+.grocery-item-actions button{font-size:.83rem;padding:.4rem .7rem}.grocery-item.bought{border-color:#4d8766}.grocery-item.unavailable{border-color:#92637a}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#groceryMessage{font-size:.9rem;margin:.5rem 0}#groceryEmpty{padding:1rem;text-align:center}
+@media(max-width:550px){.grocery-actions button{flex:1 1 100%}.grocery-item-actions{width:100%}.grocery-item-actions button{flex:1 1 auto}}

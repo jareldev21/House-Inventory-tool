@@ -15,8 +15,7 @@
         <nav class="navigationlinks" aria-label="Main navigation">
             <a href="home.html" class="nav-link">Home</a>
             <a href="inventory.html" class="nav-link" aria-current="page">Inventory</a>
-            <a href="todos.html" class="nav-link">To Do's</a>
-            <a href="placestogo.html" class="nav-link">Places to Go</a>
+            <a href="grocery.html" class="nav-link">Grocery</a>
             <button id="logout-button" type="button">Logout</button>
         </nav>
     </header>
@@ -52,6 +51,11 @@
                     <input id="joinInventoryId" placeholder="Paste inventory ID" required maxlength="32" autocomplete="off" spellcheck="false">
                     <button type="submit" id="joinInventoryBtn">Connect inventory</button>
                 </form>
+            </section>
+            <section class="grocery-shortcuts" aria-label="Grocery shortcuts">
+                <div><h2>Going grocery shopping?</h2><p>Send items you need to your grocery list.</p></div>
+                <a class="card-button" href="grocery.html?import=low">+ Add all Low Stock</a>
+                <a class="card-button" href="grocery.html?import=unavailable">+ Add all Unavailable</a>
             </section>
             <div class="row1">
                 <input type="search" id="search" aria-label="Search inventory items" placeholder="Search for items…">

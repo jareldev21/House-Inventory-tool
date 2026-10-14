@@ -10,3 +10,16 @@ export async function signInWithPopup(_auth,provider) {
  localStorage.setItem('test-user',JSON.stringify({uid:'test-user'}));
  return {user:{uid:'test-user'}};
 }
+
+export async function signInWithRedirect(_auth,provider) {
+ if(provider.parameters.prompt!=='select_account')throw Error('Account selection missing');
+ localStorage.setItem('test-redirect-pending','1');
+}
+export async function getRedirectResult() {
+ if(localStorage.getItem('test-redirect-pending')) {
+  localStorage.removeItem('test-redirect-pending');
+  localStorage.setItem('test-user',JSON.stringify({uid:'test-user'}));
+  return {user:{uid:'test-user'}};
+ }
+ return null;
+}

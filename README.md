@@ -13,7 +13,8 @@ Google sign-in and shared inventories are now implemented. See [Firebase setup a
 - `public/JS/firebase.js`: the existing Firebase project configuration and SDK version, centralized without changing values. `home.js` and `login.js` reuse it.
 - `public/HTML/home.html`: valid structure, correct feature-card destinations, shared navigation and branding.
 - `public/HTML/index.html`: shared styling and branding, retaining the pre-existing login form and autocomplete changes.
-- `public/HTML/todos.html`, `placestogo.html`, and `404.html`: themed placeholders and working home links.
+- `public/HTML/grocery.html` and `public/JS/grocery.js`: persistent grocery list, imported inventory items, purchase prices, not-available marking, removal, and explicit add-to-inventory.
+- `public/HTML/404.html`: themed missing-page fallback.
 - `public/index.html` and `public/404.html`: entry point and actual Firebase Hosting error page at the configured public root.
 - `public/Files/branding/`: editable SVG house logo/favicon and matching inventory, to-do, and places icons. Original image assets remain available.
 - `tests/`: repeatable model, static-reference, and browser checks. Test mocks are outside the deployed `public/` folder.
@@ -57,8 +58,8 @@ Writes use a Firestore transaction with merge enabled, preserving unrelated user
 - Nine model tests passed: migration preservation, stable IDs, unsafe-record rejection, stock boundaries, required-status validation, search/filter composition, conflict comparison, historical-field preservation, and category icon fallback/preservation.
 - Static checks passed for 70 exact-case local links/assets, balanced HTML tags, unique IDs, and shared CSS imports.
 - JavaScript syntax checks passed.
-- Headless Microsoft Edge browser journeys passed using local Firebase mocks: login, homepage navigation, category/item create-edit-remove, manual stock statuses and reload, legacy conversion, search/filters, category selection, persistence across reload, save/load failure recovery, stale-tab rejection, simulated account switching, logout/login, and placeholder links.
-- Responsive overflow checks passed at 320, 390, 768, and 1440 pixels for inventory, home, login, and placeholder pages. Desktop and mobile inventory screenshots were visually reviewed. No uncaught page errors occurred in these mocked journeys; expected simulated Firebase failures were logged.
+- Headless Microsoft Edge browser journeys passed using local Firebase mocks: login, homepage navigation, category/item create-edit-remove, manual stock statuses and reload, legacy conversion, search/filters, category selection, persistence across reload, save/load failure recovery, stale-tab rejection, simulated account switching, logout/login, and grocery workflows (new regression checks require execution).
+- Responsive overflow checks passed at 320, 390, 768, and 1440 pixels for inventory, home, login, and the grocery page. Desktop and mobile inventory screenshots were visually reviewed. No uncaught page errors occurred in these mocked journeys; expected simulated Firebase failures were logged.
 
 Mock tests verify frontend behavior, not the deployed Firebase service or Security Rules. Real sign-in, production persistence, actual transaction contention, deployed rules enforcement, and cross-browser/device behavior still require verification with an authorized test account or Firebase Emulator Suite.
 
@@ -92,3 +93,13 @@ The browser check requires an existing Playwright installation resolvable throug
 To replace branding, edit the corresponding SVG in `public/Files/branding/`. Replacing `logo.svg` updates the site logo and favicon.
 
 
+
+## Grocery and mobile sign-in update (October 2026)
+
+The To-do and Places pages, CSS, and dedicated artwork were removed, with navigation consolidated into Home, Inventory, and Grocery. The Grocery page is `public/HTML/grocery.html`. Users can add all Low Stock or all Unavailable items from their active inventory, add manually named items, mark purchases (with a required price in Philippine pesos), mark items not available, reset their state, and remove entries. Reimporting items from the same inventory does not duplicate source-linked list entries. Manually added grocery items **do not** automatically enter inventory; the Add to inventory action requires category and status selection. Purchase actions never change inventory stock levels.
+
+Grocery items are saved in the authenticated user's private Firestore document as `groceryItems`; they are **not** a shared grocery list even if the user has joined a shared inventory. A grocery item's optional `source` identifies the inventory record. Stock categories are read from the currently selected personal or shared inventory. Transactional saves reject stale grocery state and merge unrelated user fields; manually transferring a grocery item to inventory is atomic across the relevant documents. Existing inventory fields and records are not deleted.
+
+Mobile Google sign-in now uses `signInWithRedirect` instead of a popup. Desktop retains popup sign-in with redirect fallback if blocked; `getRedirectResult` completes the mobile round trip. The configured `authDomain` now matches the existing Firebase Hosting domain `jareljaz-house.web.app`, which is necessary for reliable redirect handling when hosted there. Verify that **the exact deployed domain** is authorized under Firebase Authentication > Settings > Authorized domains, Google provider is enabled, and OAuth configuration allows the redirect URI `https://jareljaz-house.web.app/__/auth/handler`. If hosting on a different domain, configure the appropriate same-origin authentication domain first.
+
+**Testing note:** The changes above were statically checked for JavaScript parseability; real mobile sign-in, actual Firebase rules and transactions, end-to-end browser interactions, and deployment have **not** been verified. The pre-existing mock browser test was updated for Grocery but still needs to be executed locally with Playwright and Edge.

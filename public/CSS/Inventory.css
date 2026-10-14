@@ -89,3 +89,11 @@
 @media (pointer: coarse) {
     .text-button, .add-item-button, .filters-options button { min-height: 44px; }
 }
+
+/* Inventory-to-grocery shortcuts */
+.grocery-shortcuts { display:flex; flex-wrap:wrap; align-items:center; gap:.7rem; padding:1rem; border:1px solid var(--border); border-radius:16px; margin:0 0 1rem; background:var(--panel); }
+.grocery-shortcuts > div { flex:1 1 230px; }
+.grocery-shortcuts h2 { font-size:1.05rem; }
+.grocery-shortcuts p { font-size:.85rem; margin:0; }
+.grocery-shortcuts .card-button { text-align:center; font-size:.85rem; }
+@media(max-width:550px){ .grocery-shortcuts .card-button { flex:1 1 100%; } }
