@@ -1,3 +1,6 @@
+// LOGIN CONTROLLER: Firebase password/Google authentication and redirect handling.
+// Do not put inventory loading or Firestore writes in this module.
+
 import { auth } from './firebase.js';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
 
@@ -5,11 +8,19 @@ const loginForm = document.getElementById('login-form');
 const googleButton = document.getElementById('google-sign-in');
 const message = document.getElementById('message');
 let busy = false;
+/**
+ * Authentication UI: Disable simultaneous sign-in requests while a password or Google flow is active.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function setBusy(value) {
     busy = value;
     googleButton.disabled = value;
     loginForm.querySelector('[type="submit"]').disabled = value;
 }
+/**
+ * Authentication UI: Convert Firebase Authentication error codes to actionable messages.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function friendlyError(error) {
     const errors = {
         'auth/popup-closed-by-user': 'Google sign-in was cancelled. Please try again.',
@@ -22,14 +33,23 @@ function friendlyError(error) {
     };
     return errors[error?.code] || 'Could not sign in with Google. Check your connection and try again.';
 }
+/**
+ * Google OAuth: Configure a Google provider that asks which account to use.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function googleProvider() {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     return provider;
 }
+/**
+ * Mobile OAuth: Choose full-page redirect for phone browsers where popups are unreliable.
+ * See docs/DEVELOPER_MANUAL.md for callers, data flow, and extension points.
+ */
 function prefersRedirect() {
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
+// 1. Redirect callback: complete a previous mobile Google OAuth attempt.
 // Complete a previous redirect before offering another sign-in attempt.
 setBusy(true);
 getRedirectResult(auth).then(result => {
@@ -38,6 +58,7 @@ getRedirectResult(auth).then(result => {
     console.error('Google redirect sign-in failed:', error);
     message.textContent = friendlyError(error);
 }).finally(() => { setBusy(false); });
+// 2. Password sign-in form; redirect home only after authentication succeeds.
 loginForm.addEventListener('submit', async event => {
     event.preventDefault();
     if (busy) return;
@@ -51,6 +72,7 @@ loginForm.addEventListener('submit', async event => {
         message.textContent = 'Unable to sign in. Check your email, password and connection.';
     } finally { setBusy(false); }
 });
+// 3. Google sign-in: redirect on mobile; desktop popup with fallback.
 googleButton.addEventListener('click', async () => {
     if (busy) return;
     setBusy(true);
