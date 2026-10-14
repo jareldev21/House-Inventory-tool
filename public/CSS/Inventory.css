@@ -57,7 +57,7 @@
 .text-button { min-height: 32px; padding: .25rem .5rem; font-size: .75rem; background: transparent; border-color: transparent; border-radius: 6px; }
 .danger { color: #ffb4c7; }
 .item-list { list-style: none; padding: 0; margin: 0; display: grid; gap: .5rem; }
-.item-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .6rem; padding: .7rem; border-radius: 12px; background: #ffffff08; border: 1px solid #ffffff08; }
+.item-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .2rem .6rem; padding: .7rem; border-radius: 12px; background: #ffffff08; border: 1px solid #ffffff08; }
 .item-details { min-width: 0; }
 .item-details h3 { font-size: .9rem; font-weight: 600; margin-bottom: .2rem; }
 .item-hint { font-size: .78rem; margin-bottom: .3rem; overflow-wrap: anywhere; }
@@ -66,7 +66,7 @@
 .stock-badge.low { color: var(--amber); background: #76533366; border-color: #bc8b5455; }
 .stock-badge.unavailable { color: var(--red); background: #74264666; border-color: #b9446755; }
 .stock-badge.unconfigured { color: #d1c7e2; background: #63567444; border-color: #81738b55; }
-.item-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: .2rem; }
+.item-actions { grid-column: 2 / -1; display: flex; justify-content: flex-end; gap: .2rem; }
 .add-item-button { width: 100%; margin-top: .65rem; min-height: 36px; font-size: .85rem; }
 .new-category { min-height: 215px; padding: 2rem 1rem; border: 1px dashed #8961b4; border-radius: 16px; display: grid; justify-items: center; align-content: center; text-align: center; }
 .new-category h2 { font-size: 1.05rem; }
@@ -97,3 +97,16 @@
 .grocery-shortcuts p { font-size:.85rem; margin:0; }
 .grocery-shortcuts .card-button { text-align:center; font-size:.85rem; }
 @media(max-width:550px){ .grocery-shortcuts .card-button { flex:1 1 100%; } }
+
+/* Dragging works with both touch and mouse using dedicated handles. */
+.reorder-help { font-size: .84rem; margin: .7rem 0; }
+.drag-handle { touch-action: none; user-select: none; -webkit-user-select: none; flex: 0 0 36px; width: 36px; min-width: 36px; padding: 0; background: #ffffff10; border: 1px dashed #9774bc; border-radius: 10px; color: #dcc4f7; cursor: grab; font-size: 1.45rem; line-height: 1; }
+.drag-handle.dragging { cursor: grabbing; color: #fff; background: #614090; }
+.drag-handle:disabled { cursor: not-allowed; }
+.item-card > .drag-handle { grid-column: 1; grid-row: 1 / 3; height: 100%; min-height: 44px; align-self: stretch; }
+.category-heading > .drag-handle { min-height: 46px; align-self: stretch; }
+.drag-preview { position: fixed; z-index: 5000; max-width: min(65vw, 240px); padding: .55rem .8rem; border: 2px solid var(--accent); border-radius: 12px; background: #4e3277; color: white; font-size: .9rem; font-weight: 650; pointer-events: none; overflow-wrap: anywhere; box-shadow: 0 8px 25px #0008; }
+.category-card.drag-drop-target, .item-card.drag-drop-target, .category-nav.drag-drop-target { outline: 3px solid var(--accent); outline-offset: -3px; }
+.item-card.drag-drop-target[data-drop-position="before"] { border-top: 3px solid var(--accent); }
+.item-card.drag-drop-target[data-drop-position="after"] { border-bottom: 3px solid var(--accent); }
+@media (pointer: coarse) { .drag-handle { min-height: 46px; min-width: 44px; width: 44px; } }

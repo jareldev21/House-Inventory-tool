@@ -7,7 +7,24 @@ const byId = id => document.getElementById(id);
 let user = null, session = 0, ready = false, saving = false;
 let items = [], version = inventoryVersion([]), categories = [], categoryVersion = inventoryVersion([]);
 let inventoryId = null, selectedItemId = null;
+let groceryDrag = null;
 const money = value => '₱' + Number(value).toLocaleString('en-PH', {minimumFractionDigits:2,maximumFractionDigits:2});
+
+const quantityLabel = item => item.boughtQuantity == null ? 'Quantity not recorded' : 'Quantity: ' + item.boughtQuantity;
+const priceLabel = item => item.price == null ? 'Price not recorded' : money(item.price);
+function optionalNumber(input, label, max, decimalPlaces, positive = false) {
+    const raw = input.value.trim();
+    if (raw === '') return null;
+    const decimalDigits = raw.includes('.') ? raw.split('.')[1].length : 0;
+    const valid = /^[0-9]+(?:\.[0-9]+)?$/.test(raw);
+    const value = Number(raw);
+    if (!valid || decimalDigits > decimalPlaces || !Number.isFinite(value)
+        || (positive ? value <= 0 : value < 0) || value > max) {
+        throw new Error(label + ' must be a valid ' + (positive ? 'positive' : 'nonnegative')
+            + ' number with up to ' + decimalPlaces + ' decimal places.');
+    }
+    return value;
+}
 const userRef = () => doc(db, 'users', user.uid);
 const activeRef = () => inventoryId ? doc(db, 'inventories', inventoryId) : userRef();
 function feedback(text, error = false) {
@@ -27,7 +44,7 @@ function validateList(records) {
 function controls() {
     const disabled = !ready || saving;
     document.querySelectorAll('#importLow,#importUnavailable,#addGroceryBtn,#groceryName').forEach(node => node.disabled = disabled);
-    document.querySelectorAll('.grocery-item-actions button').forEach(node => node.disabled = disabled);
+    document.querySelectorAll('.grocery-item-actions button, .grocery-list .drag-handle').forEach(node => node.disabled = disabled);
     document.querySelectorAll('dialog input,dialog select,dialog button').forEach(node => node.disabled = disabled);
     byId('logout-button').disabled = saving;
 }
@@ -40,28 +57,112 @@ function node(tag, className, value) {
 function action(label, callback) {
     const el = node('button', '', label); el.type = 'button'; el.disabled = !ready || saving; el.addEventListener('click', callback); return el;
 }
+// Persist display order by rearranging the same groceryItems array.
+function reorderedList(id, targetId, after) {
+    if (id === targetId) return items;
+    const result = [...items];
+    const sourceIndex = result.findIndex(item => item.id === id);
+    const destinationIndex = result.findIndex(item => item.id === targetId);
+    if (sourceIndex === -1 || destinationIndex === -1) return items;
+    const [moving] = result.splice(sourceIndex, 1);
+    const index = result.findIndex(item => item.id === targetId);
+    result.splice(index + Number(after), 0, moving);
+    return result;
+}
+function clearGroceryDrag() {
+    document.querySelectorAll('.grocery-drop-target').forEach(el => el.classList.remove('grocery-drop-target'));
+    groceryDrag?.ghost?.remove();
+    groceryDrag?.handle?.classList.remove('dragging');
+    groceryDrag = null;
+}
+function groceryHandle(item) {
+    const handle = node('button', 'drag-handle', '⠿');
+    handle.type = 'button';
+    handle.disabled = !ready || saving;
+    handle.dataset.item = item.id;
+    handle.title = 'Drag or use up/down arrow keys';
+    handle.setAttribute('aria-label', 'Rearrange ' + item.name + '. Drag or use up/down arrow keys.');
+    handle.addEventListener('pointerdown', event => {
+        if (!ready || saving || event.button !== 0 || groceryDrag) return;
+        groceryDrag = { pointerId:event.pointerId, handle, id:item.id, name:item.name,
+            x:event.clientX, y:event.clientY, active:false, target:null, ghost:null };
+        handle.setPointerCapture(event.pointerId);
+    });
+    handle.addEventListener('pointermove', event => {
+        const drag = groceryDrag;
+        if (!drag || drag.handle !== handle || drag.pointerId !== event.pointerId || !ready || saving) return;
+        if (!drag.active && Math.hypot(event.clientX-drag.x, event.clientY-drag.y) < 7) return;
+        event.preventDefault();
+        if (!drag.active) {
+            drag.active = true;
+            handle.classList.add('dragging');
+            drag.ghost = node('div','grocery-drag-preview','⠿  '+drag.name);
+            document.body.append(drag.ghost);
+        }
+        drag.ghost.style.left = Math.min(event.clientX + 14, window.innerWidth - 50)+'px';
+        drag.ghost.style.top = Math.max(5,event.clientY - 20)+'px';
+        if (event.clientY < 55) window.scrollBy(0,-20);
+        if (event.clientY > window.innerHeight - 55) window.scrollBy(0,20);
+        document.querySelectorAll('.grocery-drop-target').forEach(el => el.classList.remove('grocery-drop-target'));
+        const row = document.elementFromPoint(event.clientX,event.clientY)?.closest('.grocery-item');
+        drag.target = row && row.dataset.item !== drag.id
+            ? {id:row.dataset.item,after:event.clientY>=row.getBoundingClientRect().top + row.getBoundingClientRect().height/2}
+            : null;
+        if (drag.target) row.classList.add('grocery-drop-target');
+    });
+    handle.addEventListener('pointerup', async event => {
+        if (!groceryDrag || groceryDrag.handle !== handle || groceryDrag.pointerId !== event.pointerId) return;
+        const target = groceryDrag.active ? groceryDrag.target : null;
+        clearGroceryDrag();
+        if (target && ready && !saving) {
+            const next = reorderedList(item.id,target.id,target.after);
+            if (next !== items) await saveList(next);
+        }
+    });
+    handle.addEventListener('pointercancel',clearGroceryDrag);
+    handle.addEventListener('lostpointercapture',() => {
+        if (groceryDrag?.handle === handle) clearGroceryDrag();
+    });
+    handle.addEventListener('keydown', async event => {
+        if (!ready || saving || !['ArrowUp','ArrowDown'].includes(event.key)) return;
+        const index = items.findIndex(entry => entry.id === item.id);
+        const delta = event.key === 'ArrowUp' ? -1 : 1;
+        const target = items[index + delta];
+        if (!target) return;
+        event.preventDefault();
+        if (await saveList(reorderedList(item.id,target.id,delta > 0))) {
+            [...document.querySelectorAll('.grocery-list .drag-handle')].find(el=>el.dataset.item===item.id)?.focus();
+        }
+    });
+    return handle;
+}
 function render() {
     const list = byId('groceryList');
     list.replaceChildren();
     for (const item of items) {
         const li = node('li', 'grocery-item ' + item.state);
+        li.dataset.item = item.id;
         const details = node('div');
         details.append(node('div', 'grocery-name', item.name));
-        const meta = item.state === 'bought' ? 'Bought · ' + money(item.price) :
+        const meta = item.state === 'bought' ? 'Bought · ' + quantityLabel(item) + ' · ' + priceLabel(item) :
             item.state === 'unavailable' ? 'Not available at the store' : 'To buy';
         details.append(node('p', 'grocery-meta', meta + (item.source ? ' · From inventory' : ' · Manually added')));
         const actions = node('div','grocery-item-actions');
         if (item.state !== 'bought') actions.append(action('Bought', () => openBought(item)));
-        if (item.state !== 'unavailable') actions.append(action('Not available', () => changeItem(item.id, { state:'unavailable', price:null })));
-        if (item.state !== 'pending') actions.append(action('Reset', () => changeItem(item.id, { state:'pending', price:null })));
+        else actions.append(action('Edit purchase', () => openBought(item)));
+        if (item.state !== 'unavailable') actions.append(action('Not available', () => changeItem(item.id, { state:'unavailable', price:null, boughtQuantity:null })));
+        if (item.state !== 'pending') actions.append(action('Reset', () => changeItem(item.id, { state:'pending', price:null, boughtQuantity:null })));
         if (!item.source && !item.inventoryAdded) actions.append(action('Add to inventory', () => openInventory(item)));
         actions.append(action('Remove', () => {
             if (window.confirm('Remove “' + item.name + '” from your grocery list?')) saveList(items.filter(entry => entry.id !== item.id));
         }));
-        li.append(details, actions); list.append(li);
+        li.append(groceryHandle(item), details, actions); list.append(li);
     }
     byId('groceryCount').textContent = items.length + ' items · ' + items.filter(i=>i.state==='bought').length + ' bought';
-    byId('groceryTotal').textContent = 'Spent: ' + money(items.filter(i=>i.state==='bought').reduce((sum,i)=>sum+i.price,0));
+    const withPrices = items.filter(i => i.state === 'bought' && typeof i.price === 'number');
+    byId('groceryTotal').textContent = withPrices.length
+        ? 'Recorded spending: ' + money(withPrices.reduce((sum,i)=>sum+i.price,0))
+        : 'Recorded spending: —';
     byId('groceryEmpty').hidden = !ready || items.length > 0;
     controls();
 }
@@ -96,7 +197,7 @@ async function load() {
     } finally { if (token === session) render(); }
 }
 onAuthStateChanged(auth, value => {
-    session++; user=value; ready=false; saving=false; inventoryId=null; items=[]; categories=[];
+    session++; clearGroceryDrag(); user=value; ready=false; saving=false; inventoryId=null; items=[]; categories=[];
     byId('boughtDialog').close(); byId('inventoryDialog').close(); render();
     if (!value) { location.replace('index.html'); return; }
     load();
@@ -138,7 +239,7 @@ async function importStatus(status) {
         const source=(inventoryId||'personal')+'/'+category.id+'/'+item.id;
         if (existing.has(source)) continue;
         existing.add(source);
-        additions.push({id:crypto.randomUUID(),name:item.name,state:'pending',price:null,source});
+        additions.push({id:crypto.randomUUID(),name:item.name,state:'pending',price:null,boughtQuantity:null,source});
     }
     if (!additions.length) {feedback('No new ' + (status==='low'?'low-stock':'unavailable') + ' items to add.');return;}
     if (await saveList([...items,...additions])) feedback('Added '+additions.length+' items from inventory.');
@@ -150,7 +251,7 @@ byId('addGroceryForm').addEventListener('submit',async event=>{
     event.preventDefault();
     const name=byId('groceryName').value.trim();
     if(!name || name.length>200) return;
-    if(await saveList([...items,{id:crypto.randomUUID(),name,state:'pending',price:null,source:null}])){
+    if(await saveList([...items,{id:crypto.randomUUID(),name,state:'pending',price:null,boughtQuantity:null,source:null}])){
         byId('addGroceryForm').reset();
     }
 });
@@ -159,16 +260,22 @@ function openBought(item) {
     selectedItemId=item.id;
     byId('boughtForm').reset(); byId('boughtError').textContent='';
     byId('boughtItemName').textContent=item.name;
+    byId('boughtTitle').textContent=item.state === 'bought' ? 'Edit purchase' : 'Mark as bought';
+    byId('boughtQuantity').value = item.boughtQuantity == null ? '' : String(item.boughtQuantity);
+    byId('boughtPrice').value = item.price == null ? '' : String(item.price);
     byId('boughtDialog').showModal();
 }
 byId('cancelBought').addEventListener('click',()=>byId('boughtDialog').close());
 byId('boughtForm').addEventListener('submit',async event=>{
     event.preventDefault();
-    const value=Number(byId('boughtPrice').value);
-    if (!Number.isFinite(value)||value<0||value>999999999||!/^\d+(\.\d{1,2})?$/.test(byId('boughtPrice').value)) {
-        byId('boughtError').textContent='Enter a valid nonnegative price with up to 2 decimal places.';return;
+    try {
+        const boughtQuantity = optionalNumber(byId('boughtQuantity'), 'Quantity', 999999, 3, true);
+        const price = optionalNumber(byId('boughtPrice'), 'Price', 999999999, 2);
+        if (await saveList(items.map(item => item.id === selectedItemId
+            ? {...item, state:'bought', boughtQuantity, price} : item))) byId('boughtDialog').close();
+    } catch (error) {
+        byId('boughtError').textContent = error.message;
     }
-    if (await saveList(items.map(item=>item.id===selectedItemId?{...item,state:'bought',price:value}:item))) byId('boughtDialog').close();
 });
 function openInventory(item) {
     if (!ready||saving||item.source||item.inventoryAdded) return;

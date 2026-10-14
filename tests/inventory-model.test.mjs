@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 const source = await readFile(new URL('../public/JS/inventory-model.js', import.meta.url), 'utf8');
-const { normalizeCategories, stockStatus, parseStatus, matchesItem, inventoryVersion, categoryIcons, categoryIconKey } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
+const { normalizeCategories, stockStatus, parseStatus, matchesItem, inventoryVersion, categoryIcons, categoryIconKey, moveCategory, moveItem } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
 test('legacy names and unknown fields survive migration; IDs remain stable', () => {
     const old = [{ name: 'Kitchen', note: 'keep', items: ['Rice', 'Rice'] }];
     const migrated = normalizeCategories(old);
@@ -57,3 +57,36 @@ test('category icons persist through normalization and unknown icons fall back s
     assert.equal(records[0].items[0].name, 'Rice');
 });
 
+
+test('category moves retain every record and do not mutate source order', () => {
+    const old = [
+        { id: 'k', name: 'Kitchen', extra: 99, items: [{id: 'rice', name: 'Rice'}] },
+        { id: 'b', name: 'Bedroom', items: [] },
+        { id: 'l', name: 'Living Room', items: [] }
+    ];
+    const moved = moveCategory(old, 'l', 'k');
+    assert.deepEqual(moved.map(row => row.id), ['l', 'k', 'b']);
+    assert.deepEqual(moveCategory(moved, 'l', 'b', true).map(row => row.id), ['k', 'b', 'l']);
+    assert.deepEqual(old.map(row => row.id), ['k','b','l']);
+    assert.equal(moved[1].extra,99);
+    assert.deepEqual(moveCategory(old,'k','k'),old);
+    assert.throws(()=>moveCategory(old,'bad','k'));
+});
+test('items reorder within categories and move across categories without data loss', () => {
+    const old = [
+        { id:'k',name:'Kitchen',items:[{id:'a',name:'Rice',status:'low',custom:5},{id:'b',name:'Eggs'},{id:'c',name:'Milk'}] },
+        { id:'b',name:'Bedroom',items:[{id:'d',name:'Lamp'}] }
+    ];
+    const reordered=moveItem(old,'k','c','k','a');
+    assert.deepEqual(reordered[0].items.map(i=>i.id),['c','a','b']);
+    const moved=moveItem(reordered,'k','a','b','d',true);
+    assert.deepEqual(moved[0].items.map(i=>i.id),['c','b']);
+    assert.deepEqual(moved[1].items.map(i=>i.id),['d','a']);
+    assert.equal(moved[1].items[1].status,'low');
+    assert.equal(moved[1].items[1].custom,5);
+    assert.deepEqual(old[0].items.map(i=>i.id),['a','b','c']);
+    assert.deepEqual(moveItem(old,'k','a','k','a'),old);
+    assert.deepEqual(moveItem(old,'k','a','k',null).map(c=>c.items.map(i=>i.id)),[['b','c','a'],['d']]);
+    assert.throws(()=>moveItem(old,'k','a','b','missing'));
+    assert.throws(()=>moveItem(old,'k','missing','b'));
+});

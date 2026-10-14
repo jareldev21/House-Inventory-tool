@@ -118,6 +118,33 @@ const mock = name => fs.readFileSync(path.join(__dirname,name+'.mock.js'),'utf8'
   await page.getByRole('button',{name:'Guest Bedroom 1',exact:true}).click();
   assert.equal(await page.locator('.item-card').count(),1);
   await page.getByRole('button',{name:'All Items 5',exact:true}).click();
+  // Ordering is a persisted inventory mutation, including moving between categories.
+  await page.locator('.category-card').filter({hasText:'Guest Bedroom'}).locator('.category-heading .drag-handle').press('ArrowUp');
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('test-doc-test-user')).categories[0].name === 'Guest Bedroom');
+  await page.locator('.category-card').filter({hasText:'Guest Bedroom'}).locator('.category-heading .drag-handle').press('ArrowDown');
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('test-doc-test-user')).categories[0].name === 'Kitchen');
+  await page.locator('.item-card').filter({hasText:'Plates'}).locator('.drag-handle').press('ArrowUp');
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('test-doc-test-user')).categories[0].items[2].name === 'Plates');
+  await page.locator('.item-card').filter({hasText:'Plates'}).locator('.drag-handle').press('ArrowDown');
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('test-doc-test-user')).categories[0].items[3].name === 'Plates');
+  // A mouse drag onto another category moves the original record, never clones it.
+  const dragGrip = await page.locator('.item-card').filter({hasText:'Plates'}).locator('.drag-handle').boundingBox();
+  const dropHeading = await page.locator('.category-card').filter({hasText:'Guest Bedroom'}).locator('.category-heading').boundingBox();
+  await page.mouse.move(dragGrip.x+dragGrip.width/2,dragGrip.y+dragGrip.height/2);
+  await page.mouse.down();
+  await page.mouse.move(dropHeading.x+dropHeading.width/2,dropHeading.y+dropHeading.height/2,{steps:16});
+  await page.mouse.up();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('test-doc-test-user')).categories[1].items.some(i=>i.name==='Plates'));
+  const transferred = await page.evaluate(() => JSON.parse(localStorage.getItem('test-doc-test-user')).categories[1].items.find(i=>i.name==='Plates'));
+  assert.equal(transferred.currentQuantity,0);
+  assert.equal(transferred.maxQuantity,8);
+  await page.locator('.item-card').filter({hasText:'Plates'}).locator('.drag-handle').press('ArrowLeft');
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('test-doc-test-user')).categories[0].items.some(i=>i.name==='Plates'));
+  await page.locator('[data-filter="low"]').click();
+  assert.equal(await page.locator('.category-card .drag-handle').first().isDisabled(),true);
+  await page.locator('[data-filter="all"]').click();
+  await page.reload();
+  await page.getByText('Plates',{exact:true}).waitFor();
   for(const width of [768,390,320]) {
    await page.setViewportSize({width,height:800});
    await page.locator('#addItemBtn').click();
@@ -249,10 +276,26 @@ const mock = name => fs.readFileSync(path.join(__dirname,name+'.mock.js'),'utf8'
   await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).waitFor();
   await page.reload();
   await page.getByText('Dish soap',{exact:true}).waitFor();
+  await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).locator('.drag-handle').press('ArrowUp');
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('test-doc-test-user')).groceryItems[0].name === 'Dish soap');
   await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).getByRole('button',{name:'Bought'}).click();
+  // Price and quantity can both be omitted; missing values remain null, not zero.
+  await page.locator('#boughtForm button[type="submit"]').click();
+  await page.getByText('Quantity not recorded · Price not recorded',{exact:false}).waitFor();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('test-doc-test-user')).groceryItems.find(item=>item.name==='Dish soap').boughtQuantity),null);
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('test-doc-test-user')).groceryItems.find(item=>item.name==='Dish soap').price),null);
+  await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).getByRole('button',{name:'Edit purchase'}).click();
+  await page.locator('#boughtQuantity').fill('2.5');
   await page.locator('#boughtPrice').fill('35.50');
   await page.locator('#boughtForm button[type="submit"]').click();
-  await page.getByText('Bought · ₱35.50',{exact:false}).waitFor();
+  await page.getByText('Quantity: 2.5 · ₱35.50',{exact:false}).waitFor();
+  await page.reload();
+  await page.getByText('Quantity: 2.5 · ₱35.50',{exact:false}).waitFor();
+  await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).getByRole('button',{name:'Edit purchase'}).click();
+  await page.locator('#boughtQuantity').fill('');
+  await page.locator('#boughtForm button[type="submit"]').click();
+  await page.getByText('Quantity not recorded · ₱35.50',{exact:false}).waitFor();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('test-doc-test-user')).groceryItems.find(item=>item.name==='Dish soap').boughtQuantity),null);
   await page.locator('#groceryList .grocery-item').filter({hasText:'Dish soap'}).getByRole('button',{name:'Remove'}).click();
   await page.getByText('Dish soap',{exact:true}).waitFor({state:'hidden'});
   await page.getByRole('link',{name:'Home'}).click();
@@ -275,7 +318,7 @@ const mock = name => fs.readFileSync(path.join(__dirname,name+'.mock.js'),'utf8'
   await page.locator('#google-sign-in').click();
   await page.waitForURL('**/home.html');
   assert.deepEqual(errors,[]);
-  console.log('PASS: mocked Google/password login, shared inventory creation/join/edit, personal preservation, category/item CRUD, manual statuses, reload, save/load failures, stale-tab protection, user isolation, grocery CRUD and persistence, responsive layouts; no uncaught page errors.');
+  console.log('PASS: mocked Google/password login, shared inventory creation/join/edit, personal preservation, category/item CRUD, manual statuses, reload, save/load failures, stale-tab protection, user isolation, grocery CRUD/order and persistence, category/item drag ordering, responsive layouts; no uncaught page errors.');
  } finally { await browser?.close(); server.close(); }
 })().catch(error=>{console.error(error);process.exitCode=1;});
 
