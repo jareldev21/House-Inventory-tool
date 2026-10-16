@@ -11,11 +11,32 @@
     --amber: #ffd183;
     --red: #ff9fb6;
 }
-* { box-sizing: border-box; }
-body { margin: 0; min-height: 100vh; font-family: "Segoe UI", Arial, sans-serif; line-height: 1.5; background: var(--background); color: var(--text); }
-h1, h2, h3, p { margin: 0 0 .6rem; }
-h1, h2, h3 { line-height: 1.25; overflow-wrap: anywhere; }
-p { color: var(--muted); }
+
+* { 
+    box-sizing: border-box; 
+}
+
+body { 
+    margin: 0; 
+    min-height: 100vh; 
+    font-family: "Segoe UI", Arial, sans-serif; 
+    line-height: 1.5; 
+    background: var(--background); 
+    color: var(--text); 
+}
+
+h1, h2, h3, p { 
+    margin: 0 0 .6rem;
+}
+
+h1, h2, h3 { 
+    line-height: 1.25; overflow-wrap: anywhere; 
+}
+
+p { 
+    color: var(--muted); 
+}
+
 a { color: inherit; }
 button, input, select { font: inherit; }
 button, .card-button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 42px; padding: .55rem 1rem; border: 1px solid var(--border); border-radius: 12px; background: #43286c; color: var(--text); cursor: pointer; text-decoration: none; }
