@@ -271,6 +271,7 @@ async function saveCategories(nextCategories) {
   message("Saving…");
 
   try {
+    console.time("Firestore transaction");
     await runTransaction(db, async (transaction) => {
       const snapshot = await transaction.get(reference);
 
@@ -290,6 +291,8 @@ async function saveCategories(nextCategories) {
         { merge: true },
       );
     });
+
+    console.timeEnd("Firestore transaction");
 
     if (requestSession !== session) return false;
 
