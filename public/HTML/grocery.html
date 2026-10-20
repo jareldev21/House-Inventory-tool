@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Grocery | Our Home Hub</title>
-    <link rel="stylesheet" href="../CSS/main.css" />
-    <link rel="stylesheet" href="../CSS/Grocery.css" />
-    <link rel="icon" type="image/svg+xml" href="../Files/branding/logo.svg" />
+    <link rel="stylesheet" href="../CSS/main.css">
+    <link rel="stylesheet" href="../CSS/Grocery.css">
+    <link rel="icon" type="image/svg+xml" href="../Files/branding/logo.svg">
     <script type="module" src="../JS/grocery.js"></script>
   </head>
 
@@ -14,7 +14,7 @@
     <!-- Logo Part on the left side -->
     <header>
       <a class="logo-area" href="home.html">
-        <img src="../Files/branding/logo.svg" alt="" class="Herologo" />
+        <img src="../Files/branding/logo.svg" alt="" class="Herologo">
         <span>Home Hub</span>
       </a>
 
@@ -58,6 +58,7 @@
             maxlength="200"
             required
           />
+
           <button class="primary" type="submit" id="addGroceryBtn" disabled>
             + Add Item
           </button>
@@ -90,6 +91,7 @@
         <h2 id="boughtTitle">Mark as bought</h2>
         <p id="boughtItemName"></p>
         <label for="boughtQuantity">Quantity bought (optional)</label>
+
         <input
           id="boughtQuantity"
           type="number"
@@ -99,10 +101,12 @@
           inputmode="decimal"
           placeholder="e.g. 2 or 1.5"
         />
+
         <p class="form-hint">
           Leave quantity blank if you did not count it. You can add it later.
         </p>
         <label for="boughtPrice">Total price paid (₱, optional)</label>
+
         <input
           id="boughtPrice"
           type="number"
@@ -112,6 +116,7 @@
           inputmode="decimal"
           placeholder="e.g. 150.00"
         />
+        
         <p class="form-hint">
           You can also leave the price blank and mark this item as bought.
         </p>
@@ -122,22 +127,25 @@
         </div>
       </form>
     </dialog>
+
     <dialog id="inventoryDialog" aria-labelledby="inventoryTitle">
       <form id="inventoryForm">
         <h2 id="inventoryTitle">Add to inventory</h2>
         <p id="inventoryItemName"></p>
-        <label for="inventoryCategory">Category</label
-        ><select id="inventoryCategory" required></select>
-        <label for="inventoryStatus">Stock status</label
-        ><select id="inventoryStatus" required>
+        <label for="inventoryCategory">Category</label>
+
+        <select id="inventoryCategory" required></select>
+        <label for="inventoryStatus">Stock status</label>
+        <select id="inventoryStatus" required>
           <option value="available">Available</option>
           <option value="low">Low Stock</option>
           <option value="unavailable">Unavailable</option>
         </select>
+
         <p class="form-error" id="inventoryError" role="alert"></p>
         <div class="modal-buttons">
-          <button type="button" id="cancelInventory">Cancel</button
-          ><button class="primary" type="submit">Add to inventory</button>
+          <button type="button" id="cancelInventory">Cancel</button>
+          <button class="primary" type="submit">Add to inventory</button>
         </div>
       </form>
     </dialog>
