@@ -1,5 +1,5 @@
 // 1. Firebase and data helpers
-import { auth, db } from "./firebase.js";
+import {auth, db} from "./firebase.js";
 
 import {
   doc,
@@ -7,10 +7,7 @@ import {
   runTransaction,
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-import {
-  onAuthStateChanged,
-  signOut,
-} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import {onAuthStateChanged, signOut} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 import {
   normalizeCategories,
