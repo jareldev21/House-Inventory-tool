@@ -141,7 +141,10 @@ async function loadCategories() {
   byId("retryLoad").hidden = true;
 
   try {
+    console.time("Initial Firestore read");
     const personal = await getDoc(doc(db, "users", user.uid));
+
+    console.timeEnd("Initial Firestore read");
 
     if (requestSession !== session) return;
 
@@ -742,6 +745,7 @@ function renderItem(category, item) {
 }
 
 function renderCategories() {
+  console.time("Inventory rendering");
   const total = categories.reduce(
     (sum, category) => sum + category.items.length,
     0,
@@ -852,6 +856,7 @@ function renderCategories() {
     ? "No items match your search and filters."
     : "Make room for a little order. Create your first category to get started.";
   updateControls();
+  console.timeEnd("Inventory rendering");
 }
 
 // 7. Search, filtering, and event listeners
