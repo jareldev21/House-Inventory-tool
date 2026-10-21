@@ -326,15 +326,21 @@ async function load() {
   byId("retryGrocery").hidden = true;
   try {
     const personal = await getDoc(doc(db, "users", uid));
+
     if (token !== session) return;
+
     const data = personal.exists() ? personal.data() : {};
+
     inventoryId = null;
+
     items = validateList(data.groceryItems ?? []);
+
     version = inventoryVersion(items);
-    const snapshot = inventoryId
-      ? await getDoc(doc(db, "inventories", inventoryId))
-      : personal;
+
+    const snapshot = personal;
+
     if (token !== session) return;
+    
     if (
       inventoryId &&
       (!snapshot.exists() || !snapshot.data().members?.includes(uid))
