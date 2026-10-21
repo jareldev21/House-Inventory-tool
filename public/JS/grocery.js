@@ -23,8 +23,7 @@ let items = [],
   version = inventoryVersion([]),
   categories = [],
   categoryVersion = inventoryVersion([]);
-let inventoryId = null,
-  selectedItemId = null;
+let selectedItemId = null;
 let groceryDrag = null;
 const money = (value) =>
   "₱" +
@@ -63,9 +62,7 @@ function optionalNumber(input, label, max, decimalPlaces, positive = false) {
   }
   return value;
 }
-const userRef = () => doc(db, "users", user.uid);
-const activeRef = () =>
-  inventoryId ? doc(db, "inventories", inventoryId) : userRef();
+
 function feedback(text, error = false) {
   byId("groceryMessage").textContent = text;
   byId("groceryMessage").classList.toggle("error", error);
@@ -340,8 +337,6 @@ async function load() {
 
     const data = personal.exists() ? personal.data() : {};
 
-    inventoryId = null;
-
     items = validateList(data.groceryItems ?? []);
 
     version = inventoryVersion(items);
@@ -355,7 +350,7 @@ async function load() {
     categories = normalizeCategories(records);
 
     categoryVersion = inventoryVersion(records);
-    
+
     ready = true;
     feedback("List loaded. Changes save to your account.");
     const requested = new URLSearchParams(location.search).get("import");
@@ -381,7 +376,6 @@ onAuthStateChanged(auth, (value) => {
   user = value;
   ready = false;
   saving = false;
-  inventoryId = null;
   items = [];
   categories = [];
   byId("boughtDialog").close();
@@ -452,8 +446,7 @@ async function importStatus(status) {
   for (const category of categories)
     for (const item of category.items) {
       if (stockStatus(item) !== status) continue;
-      const source =
-        (inventoryId || "personal") + "/" + category.id + "/" + item.id;
+      const source = "personal/" + category.id + "/" + item.id;
       if (existing.has(source)) continue;
       existing.add(source);
       additions.push({
@@ -584,20 +577,19 @@ byId("inventoryForm").addEventListener("submit", async (event) => {
   feedback("Adding item to inventory…");
   try {
     await runTransaction(db, async (tx) => {
-      const inventoryRef = inventoryId
-        ? doc(db, "inventories", inventoryId)
-        : doc(db, "users", uid);
-      const groceryRef = doc(db, "users", uid);
-      const inventorySnap = await tx.get(inventoryRef);
-      const grocerySnap = inventoryId
-        ? await tx.get(groceryRef)
-        : inventorySnap;
-      const existing = inventorySnap.exists()
-        ? (inventorySnap.data().categories ?? [])
+
+      const personalRef = doc(db, "users", uid);
+
+      const personalSnap = await tx.get(personalRef);
+
+      const existing = personalSnap.exists()
+        ? (personalSnap.data().categories ?? [])
         : [];
-      const grocery = grocerySnap.exists()
-        ? (grocerySnap.data().groceryItems ?? [])
+
+      const grocery = personalSnap.exists()
+        ? (personalSnap.data().groceryItems ?? [])
         : [];
+
       if (
         inventoryVersion(existing) !== categoryVersion ||
         inventoryVersion(grocery) !== version
