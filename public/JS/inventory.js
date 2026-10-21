@@ -126,6 +126,8 @@ function updateControls() {
 async function loadCategories() {
   if (!currentUser || saving) return;
 
+  const loadStartedAt = performance.now();
+
   const requestSession = ++session;
 
   const user = currentUser;
@@ -202,6 +204,13 @@ async function loadCategories() {
   }
 
   renderCategories();
+
+  console.log(
+    "Total inventory loading:",
+    Math.round(performance.now() - loadStartedAt),
+    "ms"
+  );
+
 }
 
 onAuthStateChanged(auth, (user) => {
