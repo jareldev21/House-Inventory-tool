@@ -608,16 +608,15 @@ byId("inventoryForm").addEventListener("submit", async (event) => {
       const updated = grocery.map((i) =>
         i.id === current.id ? { ...i, inventoryAdded: true } : i,
       );
-      if (inventoryId) {
-        tx.set(inventoryRef, { categories: next }, { merge: true });
-        tx.set(groceryRef, { groceryItems: updated }, { merge: true });
-      } else
-        tx.set(
-          groceryRef,
-          { categories: next, groceryItems: updated },
-          { merge: true },
-        );
+
+      tx.set(
+        personalRef,
+        { categories: next, groceryItems: updated },
+        { merge: true },
+      );
+
     });
+    
     if (token !== session) return;
     // Reload authoritative data and versions after the committed transaction.
     saving = false;
