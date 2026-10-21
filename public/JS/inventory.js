@@ -149,9 +149,12 @@ async function loadCategories() {
 
     console.log("Personal inventory cache:", cachedPersonal.exists());
 
-  } catch (error) {
-    console.log("Personal inventory not cached yet.");
-  }
+    try {
+        const cachedPersonal = await getDocFromCache(...);
+        console.log("Personal inventory cache:", cachedPersonal.exists());
+    } catch (error) {
+        console.log("Personal inventory not cached yet.");
+    }
 
     console.time("Initial Firestore read");
 
@@ -205,7 +208,7 @@ async function loadCategories() {
         : "Inventory loaded. Changes are saved to your account.",
     );
 
-  }; catch (error) {
+  } catch (error) {
     if (requestSession !== session) return;
     console.error("Inventory load failed:", error);
     message(
@@ -223,7 +226,7 @@ async function loadCategories() {
     "ms"
   );
 
-
+}
 
 onAuthStateChanged(auth, (user) => {
 
