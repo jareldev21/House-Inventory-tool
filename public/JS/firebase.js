@@ -3,7 +3,13 @@ import {initializeApp} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-
 
 import {getAuth} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
-import {getFirestore} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+import {
+
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager
+
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAUiAsV7mLbwgAedq6KPafjLOwrNYFKyYw",
@@ -19,4 +25,9 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 
-export const db = getFirestore(app);
+export const db = getFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+});
+

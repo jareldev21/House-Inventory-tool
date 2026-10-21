@@ -193,6 +193,7 @@ async function loadCategories() {
         ? "Inventory loaded. Changes are shared with everyone connected to this ID."
         : "Inventory loaded. Changes are saved to your account.",
     );
+    
   } catch (error) {
     if (requestSession !== session) return;
     console.error("Inventory load failed:", error);
