@@ -162,19 +162,7 @@ async function loadCategories() {
 
     if (requestSession !== session) return;
 
-    activeInventoryId = personal.exists()
-      ? (personal.data().activeInventoryId ?? null)
-      : null;
-
-    byId("activeInventoryLabel").textContent = activeInventoryId
-      ? "Shared inventory"
-      : "Personal inventory";
-
-    byId("sharedInventoryDetails").hidden = !activeInventoryId;
-
-    byId("personalInventoryBtn").hidden = !activeInventoryId;
-
-    byId("sharedInventoryId").value = activeInventoryId ?? "";
+    byId("activeInventoryLabel").textContent = "Personal inventory";
 
     const snapshot = personal;
 
