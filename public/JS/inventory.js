@@ -22,13 +22,6 @@ import {
   moveItem,
 } from "./inventory-model.js";
 
-import {
-  createSharedInventory,
-  joinSharedInventory,
-  selectPersonalInventory,
-  parseInventoryId,
-} from "./inventory-sharing.js";
-
 // 2. DOM references and application state
 const byId = (id) => document.getElementById(id);
 
@@ -68,8 +61,6 @@ let editingCategory = null;
 let editingItem = null;
 
 let originalItemCategory = null;
-
-let activeInventoryId = null;
 
 let dragging = null;
 
@@ -205,13 +196,6 @@ onAuthStateChanged(auth, (user) => {
 
   activeInventoryId = null;
 
-  byId("sharedInventoryDetails").hidden = true;
-
-  byId("personalInventoryBtn").hidden = true;
-
-  byId("sharedInventoryId").value = "";
-
-  byId("joinInventoryId").value = "";
 
   byId("activeInventoryLabel").textContent = "Personal inventory";
 
