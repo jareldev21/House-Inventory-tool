@@ -285,9 +285,7 @@ async function saveCategories(nextCategories) {
 
   const expectedVersion = savedVersion;
 
-  const reference = activeInventoryId
-    ? doc(db, "inventories", activeInventoryId)
-    : doc(db, "users", user.uid);
+  const reference = doc(db, "users", user.uid);
 
   saving = true;
 
