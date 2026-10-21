@@ -28,9 +28,15 @@
 
     <main class="wholepage">
         <aside class="left-panel" aria-label="Inventory navigation and filters">
-            <div class="sidebar"><h2>Inventory</h2><p>Organize, track and manage your household items.</p></div>
+            <div class="sidebar">
+                <h2>Inventory</h2>
+                <p>Organize, track and manage your household items.</p>
+            </div>
+
             <div class="inventory-categories" id="categoryList"></div>
+
             <div class="filters"><h2>Quick Filters</h2></div>
+
             <div class="filters-options" aria-label="Filter by stock status">
                 <button type="button" data-filter="all" aria-pressed="true"><span class="filter-dot"></span>All Items</button>
                 <button type="button" data-filter="available" aria-pressed="false"><span class="filter-dot available"></span>Available</button>
@@ -66,7 +72,8 @@
             <div class="categorycards" id="categoryCards">
                 <div id="renderedCategories"></div>
                 <section class="new-category">
-                    <h2>Add a New Category</h2><p>Create a category to keep your items organized.</p>
+                    <h2>Add a New Category</h2>
+                    <p>Create a category to keep your items organized.</p>
                     <button type="button" id="addCategoryCardBtn" data-mutation disabled>+ Add Category</button>
                 </section>
             </div>

@@ -328,7 +328,7 @@ async function load() {
     const personal = await getDoc(doc(db, "users", uid));
     if (token !== session) return;
     const data = personal.exists() ? personal.data() : {};
-    inventoryId = data.activeInventoryId || null;
+    inventoryId = null;
     items = validateList(data.groceryItems ?? []);
     version = inventoryVersion(items);
     const snapshot = inventoryId
