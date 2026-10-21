@@ -131,6 +131,15 @@ async function loadCategories() {
 
     console.log("Personal inventory cache:", cachedPersonal.exists());
 
+    if (cachedPersonal.exists() && requestSession === session) {
+      
+      categories = normalizeCategories(cachedPersonal.data().categories ?? []);
+
+      renderCategories();
+
+      message("Showing cached inventory. Checking for updates...");
+}
+
 } catch (error) {
     console.log("Personal inventory not cached yet.");
 }

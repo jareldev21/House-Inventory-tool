@@ -38,7 +38,9 @@ export async function createSharedInventory(user, expectedVersion) {
 }
 
 export async function joinSharedInventory(user, value) {
+  
   const id = parseInventoryId(value);
+
   await runTransaction(db, async (transaction) => {
     const reference = doc(db, "inventories", id);
     const snapshot = await transaction.get(reference);
