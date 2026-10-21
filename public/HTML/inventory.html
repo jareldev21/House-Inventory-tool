@@ -40,22 +40,10 @@
         </aside>
         <section class="inventorypage" aria-labelledby="itemsTitle">
             <section class="inventory-connection" aria-labelledby="activeInventoryLabel">
-                <div class="connection-heading"><h2 id="activeInventoryLabel">Personal inventory</h2><button type="button" id="refreshInventoryBtn">Refresh inventory</button></div>
-                <div id="sharedInventoryDetails" hidden>
-                    <label for="sharedInventoryId">Inventory ID</label>
-                    <div class="connection-actions" hidden><input id="sharedInventoryId" readonly><button type="button" id="copyInventoryId">Copy ID</button></div>
-                    <p class="form-hint">Anyone signed in with this ID can join and edit. Share it only with people you trust. Use Refresh inventory to see their latest changes.</p>
+                <div class="connection-heading">
+                    <h2 id="activeInventoryLabel">Personal inventory</h2>
+                    <button type="button" id="refreshInventoryBtn">Refresh inventory</button>
                 </div>
-                <div class="connection-actions">
-                    <button type="button" id="createSharedBtn" disabled>Create shared inventory</button>
-                    <button type="button" id="personalInventoryBtn" hidden>Back to personal inventory</button>
-                </div>
-                <form id="joinInventoryForm" class="connection-actions" hidden>
-
-                    <label for="joinInventoryId">Connect using an inventory ID</label>
-                    <input id="joinInventoryId" placeholder="Paste inventory ID" required maxlength="32" autocomplete="off" spellcheck="false">
-                    <button type="submit" id="joinInventoryBtn">Connect inventory</button>
-                </form>
             </section>
             <section class="grocery-shortcuts" aria-label="Grocery shortcuts">
                 <div><h2>Going grocery shopping?</h2><p>Send items you need to your grocery list.</p></div>
