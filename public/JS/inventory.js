@@ -178,11 +178,7 @@ async function loadCategories() {
 
     activeCategory = "all";
 
-    message(
-      activeInventoryId
-        ? "Inventory loaded. Changes are shared with everyone connected to this ID."
-        : "Inventory loaded. Changes are saved to your account.",
-    );
+    message("Inventory loaded. Changes are saved to your account.");
 
   } catch (error) {
     if (requestSession !== session) return;
