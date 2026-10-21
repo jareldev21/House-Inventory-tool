@@ -316,14 +316,23 @@ function render() {
 }
 async function load() {
   if (!user || saving) return;
+
   const token = ++session,
+
     uid = user.uid;
+
   ready = false;
+
   items = [];
+
   categories = [];
+
   render();
+
   feedback("Loading grocery and inventory…");
+
   byId("retryGrocery").hidden = true;
+
   try {
     const personal = await getDoc(doc(db, "users", uid));
 
@@ -340,15 +349,13 @@ async function load() {
     const snapshot = personal;
 
     if (token !== session) return;
-    
-    if (
-      inventoryId &&
-      (!snapshot.exists() || !snapshot.data().members?.includes(uid))
-    )
-      throw Error("Inventory sharing access unavailable.");
+
     const records = snapshot.exists() ? (snapshot.data().categories ?? []) : [];
+
     categories = normalizeCategories(records);
+
     categoryVersion = inventoryVersion(records);
+    
     ready = true;
     feedback("List loaded. Changes save to your account.");
     const requested = new URLSearchParams(location.search).get("import");
