@@ -4,6 +4,7 @@ import {auth, db} from "./firebase.js";
 import {
   doc,
   getDoc,
+  getDocFromCache,
   runTransaction,
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
@@ -143,7 +144,17 @@ async function loadCategories() {
   byId("retryLoad").hidden = true;
 
   try {
+
+    const cachedPersonal = await getDocFromCache(doc(db, "users", user.uid));
+
+    console.log("Personal inventory cache:", cachedPersonal.exists());
+
+  } catch (error) {
+    console.log("Personal inventory not cached yet.");
+  }
+
     console.time("Initial Firestore read");
+
     const personal = await getDoc(doc(db, "users", user.uid));
 
     console.timeEnd("Initial Firestore read");
@@ -193,8 +204,8 @@ async function loadCategories() {
         ? "Inventory loaded. Changes are shared with everyone connected to this ID."
         : "Inventory loaded. Changes are saved to your account.",
     );
-    
-  } catch (error) {
+
+  }; catch (error) {
     if (requestSession !== session) return;
     console.error("Inventory load failed:", error);
     message(
@@ -212,7 +223,7 @@ async function loadCategories() {
     "ms"
   );
 
-}
+
 
 onAuthStateChanged(auth, (user) => {
 
