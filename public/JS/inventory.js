@@ -132,10 +132,16 @@ async function loadCategories() {
     console.log("Personal inventory cache:", cachedPersonal.exists());
 
     if (cachedPersonal.exists() && requestSession === session) {
-      
+
       categories = normalizeCategories(cachedPersonal.data().categories ?? []);
 
       renderCategories();
+
+      console.log(
+        "Cached inventory rendered in:",
+        Math.round(performance.now() - loadStartedAt),
+        "ms"
+      );
 
       message("Showing cached inventory. Checking for updates...");
 }
