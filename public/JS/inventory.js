@@ -194,9 +194,6 @@ onAuthStateChanged(auth, (user) => {
 
   saving = false;
 
-  activeInventoryId = null;
-
-
   byId("activeInventoryLabel").textContent = "Personal inventory";
 
   categories = [];
