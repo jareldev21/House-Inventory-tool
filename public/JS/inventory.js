@@ -176,19 +176,9 @@ async function loadCategories() {
 
     byId("sharedInventoryId").value = activeInventoryId ?? "";
 
-    const snapshot = activeInventoryId
-      ? await getDoc(
-          doc(db, "inventories", parseInventoryId(activeInventoryId)),
-        )
-      : personal;
+    const snapshot = personal;
 
     if (requestSession !== session) return;
-
-    if (
-      activeInventoryId &&
-      (!snapshot.exists() || !snapshot.data().members?.includes(user.uid))
-    )
-      throw new Error("Inventory membership is unavailable.");
 
     const records = snapshot.exists() ? (snapshot.data().categories ?? []) : [];
 
