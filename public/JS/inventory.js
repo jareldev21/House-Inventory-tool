@@ -101,18 +101,7 @@ function updateControls() {
       control.disabled = !ready || saving;
     });
 
-  byId("createSharedBtn").disabled =
-    !ready || saving || Boolean(activeInventoryId);
-
-  byId("joinInventoryBtn").disabled = !currentUser || saving;
-
-  byId("joinInventoryId").disabled = !currentUser || saving;
-
-  byId("personalInventoryBtn").disabled = !currentUser || saving;
-
   byId("refreshInventoryBtn").disabled = !currentUser || saving;
-
-  byId("copyInventoryId").disabled = !activeInventoryId || saving;
 
   document.querySelectorAll(".drag-handle").forEach((handle) => {
     handle.disabled = !canReorder();
