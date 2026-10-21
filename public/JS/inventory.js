@@ -151,6 +151,10 @@ async function loadCategories() {
 
 try {
 
+    const cachedPersonal = await getDocFromCache(doc(db, "users", user.uid));
+
+    console.log("Personal inventory cache:", cachedPersonal.exists());
+
 } catch (error) {
     console.log("Personal inventory not cached yet.");
 }
