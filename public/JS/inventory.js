@@ -149,13 +149,14 @@ async function loadCategories() {
 
     console.log("Personal inventory cache:", cachedPersonal.exists());
 
-    try {
-        const cachedPersonal = await getDocFromCache(...);
-        console.log("Personal inventory cache:", cachedPersonal.exists());
-    } catch (error) {
-        console.log("Personal inventory not cached yet.");
-    }
+try {
+    const cachedPersonal = await getDocFromCache(doc(db, "users", user.uid));
 
+    console.log("Personal inventory cache:", cachedPersonal.exists());
+
+} catch (error) {
+    console.log("Personal inventory not cached yet.");
+}
     console.time("Initial Firestore read");
 
     const personal = await getDoc(doc(db, "users", user.uid));
