@@ -214,6 +214,9 @@ async function loadCategories() {
 }
 
 onAuthStateChanged(auth, (user) => {
+
+  console.log("Auth callback reached at:", Math.round(performance.now()), "ms");
+
   session++;
 
   clearDrag();
