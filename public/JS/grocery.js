@@ -573,14 +573,10 @@ byId("cancelBought").addEventListener("click", () =>
 byId("boughtForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
-    const boughtQuantity = optionalNumber(
-      byId("boughtQuantity"),
-      "Quantity",
-      999999,
-      3,
-      true,
-    );
+    const boughtQuantity = byId("boughtQuantity").value.trim() || null;
+
     const price = optionalNumber(byId("boughtPrice"), "Price", 999999999, 2);
+
     if (
       await saveList(
         items.map((item) =>
@@ -591,9 +587,11 @@ byId("boughtForm").addEventListener("submit", async (event) => {
       )
     )
       byId("boughtDialog").close();
+
   } catch (error) {
     byId("boughtError").textContent = error.message;
   }
+  
 });
 function openInventory(item) {
 
