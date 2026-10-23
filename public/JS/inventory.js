@@ -5,6 +5,7 @@ import {
   doc,
   getDoc,
   getDocFromCache,
+  setDoc,
   runTransaction,
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
@@ -233,7 +234,15 @@ onAuthStateChanged(auth, (user) => {
   loadCategories();
 });
 
-// 4. Persistence. Apply changes only after Firestore confirms the save.
+
+function writeCategoriesToCloud(nextCategories, uid) {
+  return setDoc(
+    doc(db, "users", uid),
+    { categories: nextCategories },
+    { merge: true }
+  );
+}
+
 // Transactions reject stale tabs; merge preserves unrelated user-document fields.
 async function saveCategories(nextCategories) {
   if (!ready || saving || !currentUser) return false;
