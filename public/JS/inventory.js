@@ -499,7 +499,21 @@ async function removeItem(category, item) {
   const next = structuredClone(categories);
   next.find((record) => record.id === category.id).items =
     category.items.filter((record) => record.id !== item.id);
-  await saveCategories(next);
+
+  const previousActiveCategory = activeCategory;
+  
+  const requestSession = session;
+
+  if (activeCategory === category.id) activeCategory = "all";
+
+  const saved = await saveCategories(
+    categories.filter((record) => record.id !== category.id)
+  );
+
+  if (!saved && requestSession === session) {
+    activeCategory = previousActiveCategory;
+    renderCategories();
+  }
 }
 
 // Reorder only when the entire inventory is visible; filtered drops are ambiguous.
