@@ -410,8 +410,12 @@ async function saveList(next) {
     expected = version;
 
   const previousItems = items;
-  
+
   saving = true;
+
+  items= next;
+
+  render();
 
   controls();
 
@@ -425,8 +429,12 @@ async function saveList(next) {
     version = inventoryVersion(next);
     feedback("Grocery list saved.");
     return true;
+
   } catch (error) {
+    items = previousItems;
+
     console.error("Grocery save failed", error);
+    
     if (token === session) {
       const conflict = error.message === "grocery-conflict";
       feedback(
