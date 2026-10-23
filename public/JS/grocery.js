@@ -409,6 +409,8 @@ async function saveList(next) {
     uid = user.uid,
     expected = version;
 
+  const previousItems = items;
+  
   saving = true;
 
   controls();
@@ -417,7 +419,7 @@ async function saveList(next) {
 
   try {
     await writeGroceryToCloud(next, uid);
-    
+
     if (token !== session) return false;
     items = next;
     version = inventoryVersion(next);
