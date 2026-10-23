@@ -242,14 +242,7 @@ async function saveCategories(nextCategories) {
 
   const requestSession = session;
 
-  const savePromise = saveCategories(next);
 
-  categoryModal.close();
-
-  if (!(await savePromise) && requestSession === session) {
-    categoryModal.showModal();
-    byId("categoryError").textContent = "Save failed. Your changes were not saved.";
-  }
 
   const expectedVersion = savedVersion;
 
@@ -448,7 +441,16 @@ itemForm.addEventListener("submit", async (event) => {
     if (editingItem && target.id === originalItemCategory)
       target.items.splice(originalIndex, 0, updated);
     else target.items.push(updated);
-    if (await saveCategories(next)) itemModal.close();
+
+    const savePromise = saveCategories(next);
+
+    categoryModal.close();
+
+    if (!(await savePromise) && requestSession === session) {
+      categoryModal.showModal();
+      byId("categoryError").textContent = "Save failed. Your changes were not saved.";
+    }
+
   } catch (error) {
     byId("itemError").textContent = error.message;
   }
