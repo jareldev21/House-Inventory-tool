@@ -502,10 +502,6 @@ async function removeItem(category, item) {
 
   await saveCategories(next);
 
-  if (!saved && requestSession === session) {
-    activeCategory = previousActiveCategory;
-    renderCategories();
-  }
 }
 
 // Reorder only when the entire inventory is visible; filtered drops are ambiguous.
