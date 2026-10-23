@@ -252,13 +252,24 @@ function groceryHandle(item) {
   return handle;
 }
 function render() {
+
   const list = byId("groceryList");
+
+  const boughtList = byId("groceryBoughtList");
+
   list.replaceChildren();
+
+  boughtList.replaceChildren();
+
   for (const item of items) {
     const li = node("li", "grocery-item " + item.state);
+
     li.dataset.item = item.id;
+
     const details = node("div");
+
     details.append(node("div", "grocery-name", item.name));
+
     const meta =
       item.state === "bought"
         ? "Bought · " + quantityLabel(item) + " · " + priceLabel(item)
@@ -276,6 +287,7 @@ function render() {
     if (item.state !== "bought")
       actions.append(action("Bought", () => openBought(item)));
     else actions.append(action("Edit purchase", () => openBought(item)));
+
     if (item.state !== "unavailable")
       actions.append(
         action("Not available", () =>
@@ -286,6 +298,7 @@ function render() {
           }),
         ),
       );
+
     if (item.state !== "pending")
       actions.append(
         action("Reset", () =>
@@ -296,8 +309,10 @@ function render() {
           }),
         ),
       );
+
     if (!item.source && !item.inventoryAdded)
       actions.append(action("Add to inventory", () => openInventory(item)));
+
     actions.append(
       action("Remove", () => {
         if (
@@ -306,21 +321,33 @@ function render() {
           saveList(items.filter((entry) => entry.id !== item.id));
       }),
     );
+
     li.append(groceryHandle(item), details, actions);
-    list.append(li);
+
+    if (item.state === "bought") {
+      boughtList.append(li);
+    } 
+    else {
+      list.append(li);
+    }
+
   }
+  
   byId("groceryCount").textContent =
     items.length +
     " items · " +
     items.filter((i) => i.state === "bought").length +
     " bought";
+
   const withPrices = items.filter(
     (i) => i.state === "bought" && typeof i.price === "number",
   );
+
   byId("groceryTotal").textContent = withPrices.length
     ? "Recorded spending: " +
       money(withPrices.reduce((sum, i) => sum + i.price, 0))
     : "Recorded spending: —";
+
   byId("groceryEmpty").hidden = !ready || items.length > 0;
   controls();
 }
