@@ -482,13 +482,21 @@ async function removeCategory(category) {
         " items?",
     )
   )
-    return;
-  if (
-    await saveCategories(
-      categories.filter((record) => record.id !== category.id),
-    )
-  ) {
-    if (activeCategory === category.id) activeCategory = "all";
+  return;
+
+  const previousActiveCategory = activeCategory;
+  const requestSession = session;
+
+  if (activeCategory === category.id) {
+    activeCategory = "all";
+  }
+
+  const saved = await saveCategories(
+    categories.filter((record) => record.id !== category.id)
+  );
+
+  if (!saved && requestSession === session) {
+    activeCategory = previousActiveCategory;
     renderCategories();
   }
 }
