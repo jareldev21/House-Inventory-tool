@@ -3,6 +3,7 @@ import {
   doc,
   getDoc,
   runTransaction,
+  setDoc,
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 import {
   onAuthStateChanged,
@@ -15,16 +16,21 @@ import {
 } from "./inventory-model.js";
 
 const byId = (id) => document.getElementById(id);
+
 let user = null,
   session = 0,
   ready = false,
   saving = false;
+
 let items = [],
   version = inventoryVersion([]),
   categories = [],
   categoryVersion = inventoryVersion([]);
+
 let selectedItemId = null;
+
 let groceryDrag = null;
+
 const money = (value) =>
   "₱" +
   Number(value).toLocaleString("en-PH", {
@@ -387,6 +393,17 @@ onAuthStateChanged(auth, (value) => {
   }
   load();
 });
+
+function writeGroceryToCloud(nextItems,uid) {
+
+  return setDoc(
+    doc(db, "users", uid),
+    { groceryItems: nextItems },
+    { merge: true }
+  );
+}
+
+
 async function saveList(next) {
   if (!ready || saving || !user) return false;
   const token = session,
