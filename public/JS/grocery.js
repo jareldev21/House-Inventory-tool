@@ -361,8 +361,6 @@ function render() {
       ...rows
     );
   }
-
-  }
   
   byId("groceryCount").textContent =
     items.length +
