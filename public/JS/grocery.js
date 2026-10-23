@@ -275,6 +275,7 @@ function render() {
   boughtList.replaceChildren();
 
   for (const item of items) {
+
     const li = node("li", "grocery-item " + item.state);
 
     li.dataset.item = item.id;
@@ -296,14 +297,6 @@ function render() {
         meta + (item.source ? " · From inventory" : " · Manually added"),
       ),
     );
-
-  for (const [categoryName, rows] of notBoughtGroups) {
-    list.append(
-      node("li", "grocery-category-heading", categoryName),
-      ...rows
-  );
-}
-
 
     const actions = node("div", "grocery-item-actions");
 
@@ -359,6 +352,15 @@ function render() {
 
       notBoughtGroups.get(categoryName).push(li);
     }
+
+  
+
+    for (const [categoryName, rows] of notBoughtGroups) {
+    list.append(
+      node("li", "grocery-category-heading", categoryName),
+      ...rows
+    );
+  }
 
   }
   
