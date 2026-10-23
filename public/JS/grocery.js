@@ -403,26 +403,21 @@ function writeGroceryToCloud(nextItems,uid) {
   );
 }
 
-
 async function saveList(next) {
   if (!ready || saving || !user) return false;
   const token = session,
     uid = user.uid,
     expected = version;
+
   saving = true;
+
   controls();
+
   feedback("Saving grocery list…");
+
   try {
-    await runTransaction(db, async (tx) => {
-      const ref = doc(db, "users", uid);
-      const snap = await tx.get(ref);
-      const actual = snap.exists() ? (snap.data().groceryItems ?? []) : [];
-      if (inventoryVersion(actual) !== expected)
-        throw Error("grocery-conflict");
-      if (token !== session || auth.currentUser?.uid !== uid)
-        throw Error("session-changed");
-      tx.set(ref, { groceryItems: next }, { merge: true });
-    });
+    await writeGroceryToCloud(next, uid);
+    
     if (token !== session) return false;
     items = next;
     version = inventoryVersion(next);
