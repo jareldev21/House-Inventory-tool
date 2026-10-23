@@ -572,6 +572,7 @@ byId("cancelBought").addEventListener("click", () =>
 );
 byId("boughtForm").addEventListener("submit", async (event) => {
   event.preventDefault();
+  
   try {
     const boughtQuantity = byId("boughtQuantity").value.trim() || null;
 
@@ -591,7 +592,7 @@ byId("boughtForm").addEventListener("submit", async (event) => {
   } catch (error) {
     byId("boughtError").textContent = error.message;
   }
-  
+
 });
 function openInventory(item) {
 
