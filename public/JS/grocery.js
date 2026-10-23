@@ -270,6 +270,8 @@ function render() {
 
   const notBoughtGroups = new Map();
 
+  const boughtGroups = new Map();
+
   list.replaceChildren();
 
   boughtList.replaceChildren();
@@ -341,8 +343,14 @@ function render() {
     li.append(groceryHandle(item), details, actions);
 
     if (item.state === "bought") {
-      boughtList.append(li);
-    } 
+      const categoryName = groceryCategoryName(item);
+
+      if (!boughtGroups.has(categoryName)) {
+        boughtGroups.set(categoryName, []);
+      }
+
+      boughtGroups.get(categoryName).push(li);
+    }
     else {
       const categoryName = groceryCategoryName(item);
 
@@ -356,10 +364,17 @@ function render() {
     }
 
     for (const [categoryName, rows] of notBoughtGroups) {
-    list.append(
-      node("li", "grocery-category-heading", categoryName),
-      ...rows
-    );
+      list.append(
+        node("li", "grocery-category-heading", categoryName),
+        ...rows
+      );
+
+    for (const [categoryName, rows] of boughtGroups) {
+      boughtList.append(
+        node("li", "grocery-category-heading", categoryName),
+    ...rows
+  );
+}
   }
   
   byId("groceryCount").textContent =
