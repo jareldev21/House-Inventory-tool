@@ -246,11 +246,17 @@ async function saveCategories(nextCategories) {
 
   const reference = doc(db, "users", user.uid);
 
+  const previousCategories = categories;
+
   saving = true;
+
+  categories = nextCategories;
 
   updateControls();
 
   message("Saving…");
+
+  renderCategories;
 
   try {
     console.time("Firestore transaction");
@@ -277,6 +283,8 @@ async function saveCategories(nextCategories) {
     console.timeEnd("Firestore transaction");
 
     if (requestSession !== session) return false;
+
+    categories = previousCategories;
 
     categories = nextCategories;
 
