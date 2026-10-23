@@ -251,11 +251,24 @@ function groceryHandle(item) {
   });
   return handle;
 }
+
+function groceryCategoryName(item) {
+  const categoryId = item.categoryId ?? item.source?.split("/")[1];
+
+  const category = categories.find(
+    (category) => category.id === categoryId
+  );
+
+  return category?.name ?? "Uncategorized";
+}
+
 function render() {
 
   const list = byId("groceryList");
 
   const boughtList = byId("groceryBoughtList");
+
+  const notBoughtGroups = new Map();
 
   list.replaceChildren();
 
@@ -283,7 +296,17 @@ function render() {
         meta + (item.source ? " · From inventory" : " · Manually added"),
       ),
     );
+
+  for (const [categoryName, rows] of notBoughtGroups) {
+    list.append(
+      node("li", "grocery-category-heading", categoryName),
+      ...rows
+  );
+}
+
+
     const actions = node("div", "grocery-item-actions");
+
     if (item.state !== "bought")
       actions.append(action("Bought", () => openBought(item)));
     else actions.append(action("Edit purchase", () => openBought(item)));
@@ -328,7 +351,13 @@ function render() {
       boughtList.append(li);
     } 
     else {
-      list.append(li);
+      const categoryName = groceryCategoryName(item);
+
+      if (!notBoughtGroups.has(categoryName)) {
+        notBoughtGroups.set(categoryName, []);
+      }
+
+      notBoughtGroups.get(categoryName).push(li);
     }
 
   }

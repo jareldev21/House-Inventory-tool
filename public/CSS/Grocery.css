@@ -6,11 +6,40 @@
     gap:1rem
 }
 
-.grocery-panel{background:var(--panel);border:1px solid var(--border);padding:1.25rem;border-radius:18px;min-width:0}
-.grocery-panel h2{font-size:1.2rem}.grocery-panel>p{font-size:.9rem}
-.grocery-actions{display:flex;flex-wrap:wrap;gap:.65rem;margin-top:.9rem}.grocery-actions input{flex:1 1 250px}.grocery-actions button{flex:0 1 auto}
-.grocery-heading{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}.grocery-heading p{font-size:.9rem}
+.grocery-panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    padding:1.25rem;
+    border-radius:18px;
+    min-width:0
+}
+
+.grocery-panel h2{font-size:1.2rem}
+
+.grocery-panel>p{font-size:.9rem}
+
+.grocery-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:.65rem;
+    margin-top:.9rem
+}
+
+.grocery-actions input{flex:1 1 250px}
+
+.grocery-actions button{flex:0 1 auto}
+
+.grocery-heading{
+    display:flex;
+    justify-content:space-between;
+    gap:1rem;
+    flex-wrap:wrap
+}
+
+.grocery-heading p{font-size:.9rem}
+
 .grocery-list{list-style:none;padding:0;margin:1rem 0 0;display:grid;gap:.65rem}
+
 .grocery-item{background:#ffffff0a;border:1px solid #ffffff1a;border-radius:13px;padding:.85rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.7rem}
 .grocery-name{font-weight:600;overflow-wrap:anywhere}.grocery-meta{font-size:.82rem}.grocery-item-actions{display:flex;flex-wrap:wrap;gap:.4rem}
 .grocery-item-actions button{font-size:.83rem;padding:.4rem .7rem}.grocery-item.bought{border-color:#4d8766}.grocery-item.unavailable{border-color:#92637a}
@@ -42,4 +71,10 @@
 
 .grocery-item.bought .grocery-name::before {
   background-color: #39a76c;
+}
+
+.grocery-category-heading {
+  font-weight: 700;
+  padding: 12px 4px 4px;
+  color: #dcc4f7;
 }
