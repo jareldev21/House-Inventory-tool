@@ -4,6 +4,7 @@ import {
   getDoc,
   runTransaction,
   setDoc,
+  onSnapshot,
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 import {
   onAuthStateChanged,
@@ -30,6 +31,8 @@ let items = [],
 let selectedItemId = null;
 
 let groceryDrag = null;
+
+let stopGrocerySync = null;
 
 const money = (value) =>
   "₱" +
@@ -377,21 +380,50 @@ async function load() {
   }
 }
 onAuthStateChanged(auth, (value) => {
+
+  stopGrocerySync?.();
+
+  stopGrocerySync = null;
+
   session++;
+
   clearGroceryDrag();
+
   user = value;
+
   ready = false;
+
   saving = false;
+
   items = [];
+
   categories = [];
+
   byId("boughtDialog").close();
+
   byId("inventoryDialog").close();
+
   render();
+
   if (!value) {
     location.replace("index.html");
     return;
   }
+
+  stopGrocerySync = onSnapshot(
+  doc(db, "users", value.uid),
+  { includeMetadataChanges: true },
+  (snapshot) => {
+    console.log(
+      "Firestore sync:",
+      snapshot.metadata.hasPendingWrites ? "Pending" : "No pending writes"
+    );
+  },
+  (error) => console.error("Sync listener failed:", error)
+);
+
   load();
+
 });
 
 function writeGroceryToCloud(nextItems,uid) {
@@ -425,7 +457,9 @@ async function saveList(next) {
     await writeGroceryToCloud(next, uid);
 
     if (token !== session) return false;
+
     items = next;
+
     version = inventoryVersion(next);
     feedback("Grocery list saved.");
     return true;
@@ -434,7 +468,7 @@ async function saveList(next) {
     items = previousItems;
 
     console.error("Grocery save failed", error);
-    
+
     if (token === session) {
       const conflict = error.message === "grocery-conflict";
       feedback(
