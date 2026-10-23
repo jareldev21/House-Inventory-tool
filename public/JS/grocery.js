@@ -353,7 +353,7 @@ function render() {
       notBoughtGroups.get(categoryName).push(li);
     }
 
-  
+    }
 
     for (const [categoryName, rows] of notBoughtGroups) {
     list.append(
