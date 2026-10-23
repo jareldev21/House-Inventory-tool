@@ -368,14 +368,16 @@ function render() {
         node("li", "grocery-category-heading", categoryName),
         ...rows
       );
-
+    }
+    
     for (const [categoryName, rows] of boughtGroups) {
       boughtList.append(
         node("li", "grocery-category-heading", categoryName),
     ...rows
   );
+    }
+
 }
-  }
   
   byId("groceryCount").textContent =
     items.length +
