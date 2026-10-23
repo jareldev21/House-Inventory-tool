@@ -256,7 +256,7 @@ async function saveCategories(nextCategories) {
 
   message("Saving…");
 
-  renderCategories;
+  renderCategories();
 
   try {
     console.time("Firestore transaction");
@@ -284,8 +284,6 @@ async function saveCategories(nextCategories) {
 
     if (requestSession !== session) return false;
 
-    categories = previousCategories;
-
     categories = nextCategories;
 
     savedVersion = inventoryVersion(nextCategories);
@@ -297,6 +295,8 @@ async function saveCategories(nextCategories) {
     console.error("Inventory save failed:", error);
 
     if (requestSession !== session) return false;
+
+    categories = previousCategories;
 
     const conflict = error.message === "inventory-conflict";
 
