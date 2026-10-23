@@ -34,6 +34,8 @@ let groceryDrag = null;
 
 let stopGrocerySync = null;
 
+let pendingGroceryWrites = 0;
+
 const money = (value) =>
   "₱" +
   Number(value).toLocaleString("en-PH", {
@@ -592,9 +594,18 @@ byId("boughtForm").addEventListener("submit", async (event) => {
   }
 });
 function openInventory(item) {
+
+  if (pendingGroceryWrites > 0) {
+  feedback("Grocery changes are still syncing. Try again shortly.");
+  return;
+  }
+
   if (!ready || saving || item.source || item.inventoryAdded) return;
+
   selectedItemId = item.id;
+
   const select = byId("inventoryCategory");
+
   select.replaceChildren(
     ...categories.map((category) => new Option(category.name, category.id)),
   );
@@ -614,8 +625,17 @@ byId("cancelInventory").addEventListener("click", () =>
   byId("inventoryDialog").close(),
 );
 byId("inventoryForm").addEventListener("submit", async (event) => {
+
   event.preventDefault();
+
+  if (pendingGroceryWrites > 0) {
+  byId("inventoryError").textContent =
+    "Wait for Grocery changes to sync before adding to Inventory.";
+  return;
+  }
+
   if (!ready || saving || !user) return;
+  
   const current = items.find((i) => i.id === selectedItemId);
   const targetId = byId("inventoryCategory").value,
     status = byId("inventoryStatus").value;
