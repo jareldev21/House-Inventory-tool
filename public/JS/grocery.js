@@ -47,8 +47,10 @@ const quantityLabel = (item) =>
   item.boughtQuantity == null
     ? "Quantity not recorded"
     : "Quantity: " + item.boughtQuantity;
+
 const priceLabel = (item) =>
   item.price == null ? "Price not recorded" : money(item.price);
+
 function optionalNumber(input, label, max, decimalPlaces, positive = false) {
   const raw = input.value.trim();
   if (raw === "") return null;
@@ -635,7 +637,7 @@ byId("inventoryForm").addEventListener("submit", async (event) => {
   }
 
   if (!ready || saving || !user) return;
-  
+
   const current = items.find((i) => i.id === selectedItemId);
   const targetId = byId("inventoryCategory").value,
     status = byId("inventoryStatus").value;
