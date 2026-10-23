@@ -78,3 +78,15 @@
   padding: 12px 4px 4px;
   color: #dcc4f7;
 }
+
+.not-bought-icon {
+  color: #e05252;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+.bought-icon {
+  color: #39a76c;
+  margin-right: 8px;
+  font-weight: bold;
+}
