@@ -500,15 +500,7 @@ async function removeItem(category, item) {
   next.find((record) => record.id === category.id).items =
     category.items.filter((record) => record.id !== item.id);
 
-  const previousActiveCategory = activeCategory;
-  
-  const requestSession = session;
-
-  if (activeCategory === category.id) activeCategory = "all";
-
-  const saved = await saveCategories(
-    categories.filter((record) => record.id !== category.id)
-  );
+  await saveCategories(next);
 
   if (!saved && requestSession === session) {
     activeCategory = previousActiveCategory;
