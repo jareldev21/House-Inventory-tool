@@ -6,7 +6,6 @@ import {
   getDoc,
   getDocFromCache,
   setDoc,
-  runTransaction,
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 import {onAuthStateChanged, signOut} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
@@ -251,12 +250,6 @@ async function saveCategories(nextCategories) {
 
   const requestSession = session;
 
-
-
-  const expectedVersion = savedVersion;
-
-  const reference = doc(db, "users", user.uid);
-
   const previousCategories = categories;
 
   saving = true;
@@ -270,17 +263,15 @@ async function saveCategories(nextCategories) {
   renderCategories();
 
   try {
-    console.time("Firestore transaction");
+    console.time("Firestore write");
 
     await writeCategoriesToCloud(nextCategories, user.uid);
 
-    console.timeEnd("Firestore transaction");
+    console.timeEnd("Firestore write");
 
     if (requestSession !== session) return false;
 
     categories = nextCategories;
-
-    savedVersion = inventoryVersion(nextCategories);
 
     message("All changes saved.");
 
