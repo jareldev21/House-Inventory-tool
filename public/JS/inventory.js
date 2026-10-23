@@ -454,7 +454,16 @@ itemForm.addEventListener("submit", async (event) => {
       target.items.splice(originalIndex, 0, updated);
     else target.items.push(updated);
 
-    if (await saveCategories(next)) itemModal.close();
+    const requestSession = session;
+
+    const savePromise = saveCategories(next);
+
+    itemModal.close();
+
+    if (!(await savePromise) && requestSession === session) {
+      itemModal.showModal();
+      byId("itemError").textContent = "Save failed. Please try again.";
+    }
     
   } catch (error) {
     byId("itemError").textContent = error.message;
