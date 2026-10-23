@@ -407,7 +407,6 @@ categoryForm.addEventListener("submit", async (event) => {
       { name, icon },
     );
   else next.push({ id: crypto.randomUUID(), name, icon, items: [] });
-  if (await saveCategories(next)) categoryModal.close();
 });
 
 itemForm.addEventListener("submit", async (event) => {
