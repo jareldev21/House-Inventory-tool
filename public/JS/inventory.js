@@ -407,6 +407,19 @@ categoryForm.addEventListener("submit", async (event) => {
       { name, icon },
     );
   else next.push({ id: crypto.randomUUID(), name, icon, items: [] });
+
+  const requestSession = session;
+
+  const savePromise = saveCategories(next);
+
+  categoryModal.close();
+
+  if (!(await savePromise) && requestSession === session) {
+    categoryModal.showModal();
+    byId("categoryError").textContent =
+      "Save failed. Your changes were not saved.";
+  }
+
 });
 
 itemForm.addEventListener("submit", async (event) => {
@@ -441,15 +454,8 @@ itemForm.addEventListener("submit", async (event) => {
       target.items.splice(originalIndex, 0, updated);
     else target.items.push(updated);
 
-    const savePromise = saveCategories(next);
-
-    categoryModal.close();
-
-    if (!(await savePromise) && requestSession === session) {
-      categoryModal.showModal();
-      byId("categoryError").textContent = "Save failed. Your changes were not saved.";
-    }
-
+    if (await saveCategories(next)) itemModal.close();
+    
   } catch (error) {
     byId("itemError").textContent = error.message;
   }
