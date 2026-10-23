@@ -271,25 +271,8 @@ async function saveCategories(nextCategories) {
 
   try {
     console.time("Firestore transaction");
-    await runTransaction(db, async (transaction) => {
-      const snapshot = await transaction.get(reference);
 
-      const stored = snapshot.exists()
-        ? (snapshot.data().categories ?? [])
-        : [];
-
-      if (inventoryVersion(stored) !== expectedVersion)
-        throw new Error("inventory-conflict");
-
-      if (requestSession !== session || auth.currentUser?.uid !== user.uid)
-        throw new Error("session-changed");
-
-      transaction.set(
-        reference,
-        { categories: nextCategories },
-        { merge: true },
-      );
-    });
+    await writeCategoriesToCloud(nextCategories, user.uid);
 
     console.timeEnd("Firestore transaction");
 
