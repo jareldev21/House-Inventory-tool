@@ -858,6 +858,12 @@ const success = isInventoryLinked
 if (success) {
   byId("boughtDialog").close();
 }
+
+} catch (error) {
+    byId("boughtError").textContent = error.message;
+  }
+});
+
 function openInventory(item) {
 
   if (pendingGroceryWrites > 0) {
