@@ -134,3 +134,17 @@
   margin-right: 8px;
   font-weight: bold;
 }
+
+#clearGroceryBtn {
+  background: transparent;
+  color: #e05252;
+  border: 1px solid #e05252;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+#clearGroceryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

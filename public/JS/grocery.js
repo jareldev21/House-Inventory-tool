@@ -97,29 +97,34 @@ function validateList(records) {
   }
   return records;
 }
+
 function controls() {
   const disabled = !ready || saving;
-  document
-    .querySelectorAll(
+
+  document.querySelectorAll(
       "#importLow,#importUnavailable,#addGroceryBtn,#groceryName",
     )
     .forEach((node) => (node.disabled = disabled));
-  document
-    .querySelectorAll(
+
+  document.querySelectorAll(
       ".grocery-item-actions button, .grocery-list .drag-handle",
     )
     .forEach((node) => (node.disabled = disabled));
-  document
-    .querySelectorAll("dialog input,dialog select,dialog button")
+
+  document.querySelectorAll("dialog input,dialog select,dialog button")
     .forEach((node) => (node.disabled = disabled));
   byId("logout-button").disabled = saving;
+  byId("clearGroceryBtn").disabled =
+  !ready || saving || items.length === 0;
 }
+
 function node(tag, className, value) {
   const el = document.createElement(tag);
   if (className) el.className = className;
   if (value != null) el.textContent = value;
   return el;
 }
+
 function action(label, callback) {
   const el = node("button", "", label);
   el.type = "button";
@@ -232,8 +237,10 @@ function groceryHandle(item) {
     }
   });
   handle.addEventListener("pointercancel", clearGroceryDrag);
+
   handle.addEventListener("lostpointercapture", () => {
     if (groceryDrag?.handle === handle) clearGroceryDrag();
+    
   });
   handle.addEventListener("keydown", async (event) => {
     if (!ready || saving || !["ArrowUp", "ArrowDown"].includes(event.key))
@@ -605,6 +612,23 @@ byId("importUnavailable").addEventListener("click", () =>
   importStatus("unavailable"),
 );
 byId("retryGrocery").addEventListener("click", load);
+
+byId("clearGroceryBtn").addEventListener("click", async () => {
+  if (!ready || saving || items.length === 0) return;
+
+  const confirmed = window.confirm(
+    "Are you sure you want to remove all Grocery items? This cannot be undone."
+  );
+
+  if (!confirmed) return;
+
+  const success = await saveList([]);
+
+  if (success) {
+    feedback("Grocery list cleared successfully.");
+  }
+});
+
 byId("addGroceryForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const name = byId("groceryName").value.trim();
