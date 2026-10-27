@@ -103,7 +103,8 @@
         <form id="itemForm">
             <h2 id="itemTitle">Add Item</h2>
             <label for="itemCategory">Category</label><select id="itemCategory" required></select>
-            <label for="itemName">Item name</label><input type="text" id="itemName" placeholder="Rice" maxlength="200" required>
+            <label for="itemName">Item name</label>
+            <input type="text" id="itemName" placeholder="Rice" maxlength="200" required>
             <label for="itemStatus">Stock status</label>
             <select id="itemStatus" required aria-describedby="statusHint">
                 <option value="" disabled>Choose a status</option>
@@ -111,6 +112,14 @@
                 <option value="low">Low Stock</option>
                 <option value="unavailable">Unavailable</option>
             </select>
+
+            <label for="itemQuantity">Current Quantity (Optional)</label>
+            <input
+                type="text"
+                id="itemQuantity"
+                placeholder="e.g. 2 kg, 3 bottles, 1 box"
+                maxlength="60"
+            >
 
             <p class="form-hint" id="statusHint">
                 Available: more than 20% left. Low Stock: some left, but 20% or below. Unavailable: none left (0). Choose the status that best matches your stock.

@@ -356,19 +356,31 @@ function openCategoryModal(category = null) {
 
 function openItemModal(categoryId = activeCategory, item = null) {
   if (!ready || saving || !categories.length) return;
+
   itemForm.reset();
+
   editingItem = item?.id ?? null;
+
   originalItemCategory = item ? categoryId : null;
+
   byId("itemError").textContent = "";
+
   byId("itemTitle").textContent = item ? "Edit Item" : "Add Item";
+
   byId("itemCategory").replaceChildren(
     ...categories.map((category) => new Option(category.name, category.id)),
   );
   if (categories.some((category) => category.id === categoryId))
     byId("itemCategory").value = categoryId;
+
   byId("itemName").value = item?.name ?? "";
+
+  byId("itemQuantity").value = item?.quantityText ?? "";
+
   const status = item ? stockStatus(item) : "unconfigured";
+
   byId("itemStatus").value = status === "unconfigured" ? "" : status;
+
   itemModal.showModal();
 }
 
@@ -407,8 +419,12 @@ categoryForm.addEventListener("submit", async (event) => {
 
 itemForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+
   if (!ready || saving) return;
+
   const name = byId("itemName").value.trim();
+
+  const quantityText = byId("itemQuantity").value.trim();
   try {
     if (!name) throw new Error("Enter an item name.");
     const status = parseStatus(byId("itemStatus").value);
@@ -431,8 +447,10 @@ itemForm.addEventListener("submit", async (event) => {
       ...original,
       id: editingItem ?? crypto.randomUUID(),
       name,
+      quantityText: quantityText || null,
       status,
     };
+
     if (editingItem && target.id === originalItemCategory)
       target.items.splice(originalIndex, 0, updated);
     else target.items.push(updated);
@@ -727,10 +745,25 @@ function categoryIconImage(key, className) {
 
 function renderItem(category, item) {
   const status = stockStatus(item);
+
   const row = element("li", "item-card " + status);
+  
   row.dataset.itemId = item.id;
+
   const details = element("div", "item-details");
+
   details.append(element("h3", "", item.name));
+
+  if (item.quantityText) {
+    details.append(
+      element(
+        "p",
+        "item-hint",
+        "Current Quantity: " + item.quantityText
+      )
+    );
+  }
+
   if (status === "unconfigured")
     details.append(element("p", "item-hint", "Edit to choose a stock status."));
   const badge = element("span", "stock-badge " + status, labels[status]);

@@ -113,7 +113,9 @@ function controls() {
 
   document.querySelectorAll("dialog input,dialog select,dialog button")
     .forEach((node) => (node.disabled = disabled));
+
   byId("logout-button").disabled = saving;
+  
   byId("clearGroceryBtn").disabled =
   !ready || saving || items.length === 0;
 }
