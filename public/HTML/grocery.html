@@ -72,6 +72,9 @@
           </div>
           <p id="groceryTotal"></p>
         </div>
+
+        <button type="button" id="clearGroceryBtn" disabled>Clear Grocery List</button>
+        
         <p id="groceryMessage" role="status" aria-live="polite">
           Loading your list…
         </p>
@@ -90,8 +93,12 @@
 
         <br>
 
-        <h3>  <span class="bought-icon" aria-hidden="true">✓</span>
-          Bought:</h3>
+        <h3>
+          <span class="bought-icon" aria-hidden="true">
+            ✓
+          </span>
+          Bought:
+        </h3>
 
         <ul id="groceryBoughtList" class="grocery-list"></ul>
 

@@ -40,7 +40,17 @@
 
 .grocery-list{list-style:none;padding:0;margin:1rem 0 0;display:grid;gap:.65rem}
 
-.grocery-item{background:#ffffff0a;border:1px solid #ffffff1a;border-radius:13px;padding:.85rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.7rem}
+.grocery-item{
+  background:#ffffff0a;
+  border:1px solid #ffffff1a;
+  border-radius:13px;
+  padding:.85rem;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:.7rem
+}
 .grocery-name{font-weight:600;overflow-wrap:anywhere}.grocery-meta{font-size:.82rem}.grocery-item-actions{display:flex;flex-wrap:wrap;gap:.4rem}
 .grocery-item-actions button{font-size:.83rem;padding:.4rem .7rem}.grocery-item.bought{border-color:#4d8766}.grocery-item.unavailable{border-color:#92637a}
 .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -49,14 +59,48 @@
 
 /* Drag handles are explicit so taps on purchase actions still work. */
 .grocery-item{justify-content:flex-start}
+
 .grocery-item>div:nth-child(2){flex:1 1 155px;min-width:0}
+
 .grocery-item-actions{flex:0 1 auto}
+
 .grocery-reorder-help{font-size:.83rem;margin:.65rem 0 0}
-.grocery-item .drag-handle{touch-action:none;user-select:none;-webkit-user-select:none;flex:0 0 40px;min-width:40px;width:40px;min-height:46px;padding:0;background:#ffffff10;border:1px dashed #9774bc;border-radius:10px;color:#dcc4f7;cursor:grab;font-size:1.45rem}
+
+.grocery-item .drag-handle{
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+  flex:0 0 40px;
+  min-width:40px;
+  width:40px;
+  min-height:46px;
+  padding:0;
+  background:#ffffff10;border:
+  1px dashed #9774bc;
+  border-radius:10px;
+  color:#dcc4f7;
+  cursor:grab;
+  font-size:1.45rem;
+}
 .grocery-item .drag-handle.dragging{cursor:grabbing;background:#614090}
+
 .grocery-item .drag-handle:disabled{cursor:not-allowed}
+
 .grocery-item.grocery-drop-target{outline:3px solid var(--accent);outline-offset:-3px}
-.grocery-drag-preview{position:fixed;z-index:5000;max-width:min(65vw,240px);padding:.55rem .8rem;border:2px solid var(--accent);border-radius:12px;background:#4e3277;color:#fff;pointer-events:none;overflow-wrap:anywhere;box-shadow:0 8px 25px #0008}
+
+.grocery-drag-preview{
+  position:fixed;
+  z-index:5000;
+  max-width:min(65vw,240px);
+  padding:.55rem .8rem;
+  border:2px solid var(--accent);
+  border-radius:12px;
+  background:#4e3277;
+  color:#fff;
+  pointer-events:none;
+  overflow-wrap:anywhere;
+  box-shadow:0 8px 25px #0008}
+
 @media(max-width:550px){.grocery-item-actions{flex:1 1 100%;width:100%;padding-left:48px}}
 
 .grocery-item .grocery-name::before {
