@@ -57,7 +57,7 @@
           <select id="groceryCategory">
             <option value="">Uncategorized</option>
           </select>
-          
+
           <label class="visually-hidden" for="groceryName">Item name</label>
           <input
             id="groceryName"
@@ -116,8 +116,11 @@
     </main>
     <dialog id="boughtDialog" aria-labelledby="boughtTitle">
       <form id="boughtForm">
+        
         <h2 id="boughtTitle">Mark as bought</h2>
+
         <p id="boughtItemName"></p>
+
         <label for="boughtQuantity">Quantity bought (optional)</label>
 
         <input
@@ -126,6 +129,21 @@
           maxlength="80"
           placeholder="e.g. 2 packs, 1 kilo, 3 bottles"
         />
+
+        <div id="inventoryQuantityOption" hidden>
+        <label for="updateInventoryQuantity">
+          <input
+            type="checkbox"
+            id="updateInventoryQuantity"
+          >
+          Also update Inventory quantity
+        </label>
+
+        <p class="form-hint">
+          Replaces the current Inventory quantity with
+          the quantity bought.
+        </p>
+      </div>
 
         <p class="form-hint">
           Leave quantity blank if you did not count it. You can add it later.

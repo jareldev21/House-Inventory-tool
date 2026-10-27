@@ -96,13 +96,15 @@
                 <div id="categoryIconOptions" class="category-icon-options"></div>
             </fieldset>
             <p class="form-error" id="categoryError" role="alert"></p>
-            <div class="modal-buttons"><button type="button" id="cancelCategory">Cancel</button><button type="submit" class="primary" data-mutation>Save Category</button></div>
+            <div class="modal-buttons"><button type="button" id="cancelCategory">Cancel</button>
+                <button type="submit" class="primary" data-mutation>Save Category</button></div>
         </form>
     </dialog>
     <dialog id="itemModal" aria-labelledby="itemTitle">
         <form id="itemForm">
             <h2 id="itemTitle">Add Item</h2>
-            <label for="itemCategory">Category</label><select id="itemCategory" required></select>
+            <label for="itemCategory">Category</label>
+            <select id="itemCategory" required></select>
             <label for="itemName">Item name</label>
             <input type="text" id="itemName" placeholder="Rice" maxlength="200" required>
             <label for="itemStatus">Stock status</label>

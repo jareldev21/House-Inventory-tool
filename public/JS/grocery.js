@@ -115,7 +115,7 @@ function controls() {
     .forEach((node) => (node.disabled = disabled));
 
   byId("logout-button").disabled = saving;
-  
+
   byId("clearGroceryBtn").disabled =
   !ready || saving || items.length === 0;
 }
@@ -663,9 +663,25 @@ byId("addGroceryForm").addEventListener("submit", async (event) => {
 });
 function openBought(item) {
   if (!ready || saving) return;
+
   selectedItemId = item.id;
+
   byId("boughtForm").reset();
+
+  const sourceParts = item.source?.split("/") ?? [];
+
+  const linkedItem =
+    sourceParts[0] === "personal" &&
+    categories.some((category) =>
+      category.items.some(
+        (record) => record.id === sourceParts[2]
+      )
+    );
+
+  byId("inventoryQuantityOption").hidden = !linkedItem;
+
   byId("boughtError").textContent = "";
+
   byId("boughtItemName").textContent = item.name;
   byId("boughtTitle").textContent =
     item.state === "bought" ? "Edit purchase" : "Mark as bought";
