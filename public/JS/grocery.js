@@ -252,6 +252,7 @@ function groceryHandle(item) {
     const target = items[index + delta];
     if (!target) return;
     event.preventDefault();
+
     if (await saveList(reorderedList(item.id, target.id, delta > 0))) {
       [...document.querySelectorAll(".grocery-list .drag-handle")]
         .find((el) => el.dataset.item === item.id)
@@ -269,6 +270,23 @@ function groceryCategoryName(item) {
   );
 
   return category?.name ?? "Uncategorized";
+}
+
+
+function findLinkedInventoryItem(groceryItem, records = categories) {
+  const parts = groceryItem.source?.split("/") ?? [];
+
+  if (parts[0] !== "personal") return null;
+
+  for (const category of records) {
+    const found = category.items.find(
+      (item) => item.id === parts[2]
+    );
+
+    if (found) return found;
+  }
+
+  return null;
 }
 
 function render() {
@@ -294,6 +312,18 @@ function render() {
     const details = node("div");
 
     details.append(node("div", "grocery-name", item.name));
+
+    const inventoryItem = findLinkedInventoryItem(item);
+
+if (inventoryItem?.quantityText) {
+  details.append(
+    node(
+      "p",
+      "grocery-meta",
+      "Current Quantity: " + inventoryItem.quantityText
+    )
+  );
+}
 
     const meta =
       item.state === "bought"
@@ -416,6 +446,8 @@ async function load() {
   items = [];
 
   categories = [];
+  
+
 
   render();
 
@@ -615,8 +647,35 @@ async function importStatus(status) {
     );
     return;
   }
-  if (await saveList([...items, ...additions]))
-    feedback("Added " + additions.length + " items from inventory.");
+ const groceryItem = items.find(
+  (item) => item.id === selectedItemId
+);
+
+if (!groceryItem) {
+  throw new Error("Grocery item not found.");
+}
+
+const nextItems = items.map((item) =>
+  item.id === selectedItemId
+    ? { ...item, state: "bought", boughtQuantity, price }
+    : item
+);
+
+const isInventoryLinked =
+  groceryItem.source?.startsWith("personal/");
+
+const success = isInventoryLinked
+  ? await savePurchaseAndInventory(
+      nextItems,
+      groceryItem,
+      boughtQuantity
+    )
+  : await saveList(nextItems);
+
+if (success) {
+  byId("boughtDialog").close();
+}
+
 }
 byId("importLow").addEventListener("click", () => importStatus("low"));
 byId("importUnavailable").addEventListener("click", () =>
@@ -661,6 +720,88 @@ byId("addGroceryForm").addEventListener("submit", async (event) => {
     byId("addGroceryForm").reset();
   }
 });
+
+async function savePurchaseAndInventory(nextItems, groceryItem, quantityText) {
+  if (!ready || saving || !user) return false;
+
+  const token = session;
+  const uid = user.uid;
+
+  saving = true;
+  controls();
+
+  try {
+    await runTransaction(db, async (tx) => {
+      const ref = doc(db, "users", uid);
+      const snapshot = await tx.get(ref);
+      const data = snapshot.exists() ? snapshot.data() : {};
+
+      const storedCategories = data.categories ?? [];
+      const storedGrocery = data.groceryItems ?? [];
+
+      if (
+        inventoryVersion(storedCategories) !== categoryVersion ||
+        inventoryVersion(storedGrocery) !== version
+      ) {
+        throw new Error("data-conflict");
+      }
+
+      if (token !== session || auth.currentUser?.uid !== uid) {
+        throw new Error("session-changed");
+      }
+
+      const updatedCategories = normalizeCategories(storedCategories);
+      const inventoryItem = findLinkedInventoryItem(
+        groceryItem,
+        updatedCategories
+      );
+
+      if (!inventoryItem) {
+        throw new Error("linked-item-missing");
+      }
+
+      inventoryItem.quantityText = quantityText;
+
+      tx.set(
+        ref,
+        {
+          categories: updatedCategories,
+          groceryItems: nextItems
+        },
+        { merge: true }
+      );
+    });
+
+    if (token !== session) return false;
+
+    saving = false;
+    await load();
+
+    if (!ready) return false;
+
+    feedback("Purchase saved and Inventory quantity updated.");
+    return true;
+
+  } catch (error) {
+    console.error("Purchase synchronization failed:", error);
+
+    if (token === session) {
+      byId("boughtError").textContent =
+        error.message === "data-conflict"
+          ? "Inventory or Grocery changed. Reload before trying again."
+          : "Could not save the purchase and Inventory quantity.";
+    }
+
+    return false;
+
+  } finally {
+    if (token === session) {
+      saving = false;
+      render();
+    }
+  }
+}
+
 function openBought(item) {
   if (!ready || saving) return;
 
