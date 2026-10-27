@@ -102,7 +102,7 @@ function controls() {
   const disabled = !ready || saving;
 
   document.querySelectorAll(
-      "#importLow,#importUnavailable,#addGroceryBtn,#groceryName",
+      "#importLow,#groceryCategory,#importUnavailable,#addGroceryBtn,#groceryName",
     )
     .forEach((node) => (node.disabled = disabled));
 
@@ -240,7 +240,7 @@ function groceryHandle(item) {
 
   handle.addEventListener("lostpointercapture", () => {
     if (groceryDrag?.handle === handle) clearGroceryDrag();
-    
+
   });
   handle.addEventListener("keydown", async (event) => {
     if (!ready || saving || !["ArrowUp", "ArrowDown"].includes(event.key))
@@ -439,6 +439,15 @@ async function load() {
     const records = snapshot.exists() ? (snapshot.data().categories ?? []) : [];
 
     categories = normalizeCategories(records);
+
+    const categorySelect = byId("groceryCategory");
+
+    categorySelect.replaceChildren(
+      new Option("Uncategorized", ""),
+      ...categories.map(
+        (category) => new Option(category.name, category.id)
+      )
+    );
 
     categoryVersion = inventoryVersion(records);
 
@@ -639,6 +648,7 @@ byId("addGroceryForm").addEventListener("submit", async (event) => {
       {
         id: crypto.randomUUID(),
         name,
+        categoryId: byId("groceryCategory").value || null,
         state: "pending",
         price: null,
         boughtQuantity: null,
