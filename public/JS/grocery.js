@@ -830,22 +830,34 @@ byId("boughtForm").addEventListener("submit", async (event) => {
 
     const price = optionalNumber(byId("boughtPrice"), "Price", 999999999, 2);
 
-    if (
-      await saveList(
-        items.map((item) =>
-          item.id === selectedItemId
-            ? { ...item, state: "bought", boughtQuantity, price }
-            : item,
-        ),
-      )
+const groceryItem = items.find(
+  (item) => item.id === selectedItemId
+);
+
+if (!groceryItem) {
+  throw new Error("Grocery item not found.");
+}
+
+const nextItems = items.map((item) =>
+  item.id === selectedItemId
+    ? { ...item, state: "bought", boughtQuantity, price }
+    : item
+);
+
+const isInventoryLinked =
+  groceryItem.source?.startsWith("personal/");
+
+const success = isInventoryLinked
+  ? await savePurchaseAndInventory(
+      nextItems,
+      groceryItem,
+      boughtQuantity
     )
-      byId("boughtDialog").close();
+  : await saveList(nextItems);
 
-  } catch (error) {
-    byId("boughtError").textContent = error.message;
-  }
-
-});
+if (success) {
+  byId("boughtDialog").close();
+}
 function openInventory(item) {
 
   if (pendingGroceryWrites > 0) {
