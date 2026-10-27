@@ -809,18 +809,6 @@ function openBought(item) {
 
   byId("boughtForm").reset();
 
-  const sourceParts = item.source?.split("/") ?? [];
-
-  const linkedItem =
-    sourceParts[0] === "personal" &&
-    categories.some((category) =>
-      category.items.some(
-        (record) => record.id === sourceParts[2]
-      )
-    );
-
-  byId("inventoryQuantityOption").hidden = !linkedItem;
-
   byId("boughtError").textContent = "";
 
   byId("boughtItemName").textContent = item.name;
