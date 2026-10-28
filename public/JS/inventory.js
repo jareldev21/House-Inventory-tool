@@ -849,13 +849,21 @@ function renderCategories() {
       const items = category.items.filter((item) =>
         matchesItem(item, search, activeFilter),
       );
+      
       if (!items.length && (search.trim() || activeFilter !== "all")) return;
+
       shown += items.length;
+
       const card = element("section", "category-card");
+
       card.dataset.categoryId = category.id;
+
       const heading = element("div", "category-heading");
+
       const icon = categoryIconImage(category.icon, "category-icon");
+
       const title = element("div");
+
       title.append(
         element("h2", "", category.name),
         element(
@@ -877,11 +885,17 @@ function renderCategories() {
         () => removeCategory(category),
         "text-button danger",
       );
+
       remove.setAttribute("aria-label", "Delete category " + category.name);
+
       actions.append(edit, remove);
+
       const list = element("ul", "item-list");
+
       list.append(...items.map((item) => renderItem(category, item)));
+
       card.append(heading, actions, list);
+
       if (!items.length)
         card.append(
           element(
@@ -899,12 +913,17 @@ function renderCategories() {
       );
       container.append(card);
     });
+
   byId("itemCount").textContent = shown + " shown · " + total + " items total";
+
   byId("emptyState").hidden = !ready || container.childElementCount > 0;
+
   byId("emptyState").textContent = categories.length
     ? "No items match your search and filters."
     : "Make room for a little order. Create your first category to get started.";
+
   updateControls();
+
   console.timeEnd("Inventory rendering");
 }
 
