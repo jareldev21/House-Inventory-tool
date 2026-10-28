@@ -52,6 +52,10 @@ let ready = false;
 
 let saving = false;
 
+let deleteQueue = Promise.resolve();
+
+let pendingDeletes = 0;
+
 let activeCategory = "all";
 
 let activeFilter = "all";
@@ -782,14 +786,21 @@ function renderItem(category, item) {
     "text-button",
   );
   edit.setAttribute("aria-label", "Edit " + item.name);
+
   const remove = button(
     "Remove",
     () => removeItem(category, item),
     "text-button danger",
   );
+
+  remove.dataset.delete="";
+
   remove.setAttribute("aria-label", "Remove " + item.name);
+
   actions.append(edit, remove);
+
   row.append(dragHandle("item", category, item), details, badge, actions);
+
   return row;
 }
 
@@ -849,7 +860,7 @@ function renderCategories() {
       const items = category.items.filter((item) =>
         matchesItem(item, search, activeFilter),
       );
-      
+
       if (!items.length && (search.trim() || activeFilter !== "all")) return;
 
       shown += items.length;
@@ -885,6 +896,8 @@ function renderCategories() {
         () => removeCategory(category),
         "text-button danger",
       );
+
+      remove.dataset.delete = "";
 
       remove.setAttribute("aria-label", "Delete category " + category.name);
 
