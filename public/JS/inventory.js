@@ -74,8 +74,13 @@ function message(text, error = false) {
 }
 
 function updateControls() {
+
   document.querySelectorAll("[data-mutation]").forEach((button) => {
-    button.disabled = !ready || saving;
+    const canRemove =
+      pendingDeletes > 0 &&
+      button.matches(".item-card [data-delete]");
+
+    button.disabled = !ready || (saving && !canRemove);
   });
 
   byId("addItemBtn").disabled = !ready || saving || categories.length === 0;
@@ -469,6 +474,66 @@ itemForm.addEventListener("submit", async (event) => {
   }
 });
 
+async function flushDeletions(uid, token) {
+  try {
+    while (
+      pendingDeletes > 0 &&
+      token === session &&
+      currentUser?.uid === uid
+    ) {
+      const snapshot = structuredClone(categories);
+      const count = pendingDeletes;
+
+      await writeCategoriesToCloud(snapshot, uid);
+
+      if (token !== session) return;
+
+      pendingDeletes -= count;
+    }
+
+    if (token === session) {
+      message("All deletions saved.");
+    }
+
+  } catch (error) {
+    console.error("Deletion failed:", error);
+
+    if (token === session) {
+      pendingDeletes = 0;
+      ready = false;
+      byId("retryLoad").hidden = false;
+
+      message(
+        "Some deletions may not have saved. Reload Inventory to reconcile.",
+        true
+      );
+    }
+
+  } finally {
+    if (token === session) {
+      saving = false;
+      renderCategories();
+    }
+  }
+}
+
+function queueDeletion(next) {
+  const token = session;
+  const uid = currentUser.uid;
+  const shouldStart = pendingDeletes === 0;
+
+  categories = next;
+  pendingDeletes++;
+  saving = true;
+
+  renderCategories();
+  message("Saving deletions…");
+
+  if (shouldStart) {
+    deleteQueue = flushDeletions(uid, token);
+  }
+}
+
 async function removeCategory(category) {
   if (
     !ready ||
@@ -500,15 +565,30 @@ async function removeCategory(category) {
   }
 }
 
-async function removeItem(category, item) {
-  if (!ready || saving || !window.confirm("Remove “" + item.name + "”?"))
-    return;
+function removeItem(category, item) {
+  if (
+    !ready ||
+    (saving && pendingDeletes === 0) ||
+    !window.confirm("Remove “" + item.name + "”?")
+  ) return;
+
   const next = structuredClone(categories);
-  next.find((record) => record.id === category.id).items =
-    category.items.filter((record) => record.id !== item.id);
 
-  await saveCategories(next);
+  const target = next.find(
+    (record) => record.id === category.id
+  );
 
+  if (!target) return;
+
+  const previousCount = target.items.length;
+
+  target.items = target.items.filter(
+    (record) => record.id !== item.id
+  );
+
+  if (target.items.length === previousCount) return;
+
+  queueDeletion(next);
 }
 
 // Reorder only when the entire inventory is visible; filtered drops are ambiguous.
@@ -805,13 +885,18 @@ function renderItem(category, item) {
 }
 
 function renderCategories() {
+
   console.time("Inventory rendering");
+
   const total = categories.reduce(
     (sum, category) => sum + category.items.length,
     0,
   );
+
   const categoryList = byId("categoryList");
+
   categoryList.replaceChildren();
+
   [
     { id: "all", name: "All Items", count: total },
     ...categories.map((category) => ({
@@ -828,34 +913,45 @@ function renderCategories() {
       "category-nav",
       false,
     );
+
     const label = element("span", "category-nav-label");
+
     if (category.id !== "all")
       label.append(categoryIconImage(category.icon, "category-nav-icon"));
+
     label.append(element("span", "", category.name));
+
     navigation.append(label, element("span", "count", category.count));
+
     navigation.setAttribute(
       "aria-pressed",
       String(activeCategory === category.id),
     );
+
     navigation.dataset.categoryId = category.id;
+
     categoryList.append(navigation);
   });
-  document
-    .querySelectorAll("[data-filter]")
+
+  document.querySelectorAll("[data-filter]")
+
     .forEach((control) =>
       control.setAttribute(
         "aria-pressed",
         String(control.dataset.filter === activeFilter),
       ),
     );
+
   const container = byId("renderedCategories");
+
   container.replaceChildren();
+
   const search = byId("search").value;
+
   let shown = 0;
-  categories
-    .filter(
-      (category) => activeCategory === "all" || category.id === activeCategory,
-    )
+
+  categories.filter((category) => activeCategory === "all" || category.id === activeCategory,)
+
     .forEach((category) => {
       const items = category.items.filter((item) =>
         matchesItem(item, search, activeFilter),
@@ -884,7 +980,9 @@ function renderCategories() {
         ),
       );
       heading.append(dragHandle("category", category), icon, title);
+
       const actions = element("div", "category-actions");
+
       const edit = button(
         "Edit",
         () => openCategoryModal(category),

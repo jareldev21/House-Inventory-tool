@@ -60,7 +60,7 @@ function optionalNumber(input, label, max, decimalPlaces, positive = false) {
   const valid = /^[0-9]+(?:\.[0-9]+)?$/.test(raw);
 
   const value = Number(raw);
-  
+
   if (
     !valid ||
     decimalDigits > decimalPlaces ||
@@ -125,9 +125,13 @@ function controls() {
 }
 
 function node(tag, className, value) {
+
   const el = document.createElement(tag);
+
   if (className) el.className = className;
+
   if (value != null) el.textContent = value;
+  
   return el;
 }
 
