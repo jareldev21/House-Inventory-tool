@@ -53,10 +53,14 @@ const priceLabel = (item) =>
 
 function optionalNumber(input, label, max, decimalPlaces, positive = false) {
   const raw = input.value.trim();
+
   if (raw === "") return null;
   const decimalDigits = raw.includes(".") ? raw.split(".")[1].length : 0;
+
   const valid = /^[0-9]+(?:\.[0-9]+)?$/.test(raw);
+
   const value = Number(raw);
+  
   if (
     !valid ||
     decimalDigits > decimalPlaces ||
@@ -743,41 +747,43 @@ async function savePurchaseAndInventory(nextItems, groceryItem, quantityText) {
 
     const storedGrocery = data.groceryItems ?? [];
 
-      if (
+    if (
         inventoryVersion(storedCategories) !== categoryVersion ||
         inventoryVersion(storedGrocery) !== version
       ) {
         throw new Error("data-conflict");
       }
 
-      if (token !== session || auth.currentUser?.uid !== uid) {
+    if (token !== session || auth.currentUser?.uid !== uid) {
         throw new Error("session-changed");
       }
 
-      const updatedCategories = normalizeCategories(storedCategories);
+    const updatedCategories = normalizeCategories(storedCategories);
 
-      const inventoryItem = findLinkedInventoryItem(
+    const inventoryItem = findLinkedInventoryItem(
         groceryItem,
         updatedCategories
-      );
+    );
 
-      if (!inventoryItem) {
+    if (!inventoryItem) {
         throw new Error("linked-item-missing");
-      }
+    }
 
-      inventoryItem.quantityText = quantityText;
+    inventoryItem.quantityText = quantityText;
 
-      tx.set(
+    tx.set(
         ref,
         {
           categories: updatedCategories,
           groceryItems: nextItems
         },
         { merge: true }
-      );
-    });
+    );
 
     return updatedCategories;
+
+});
+
 
     if (token !== session) return false;
 
@@ -790,7 +796,7 @@ async function savePurchaseAndInventory(nextItems, groceryItem, quantityText) {
     categoryVersion = inventoryVersion(savedCategories);
 
     feedback("Purchase saved and Inventory quantity updated.");
-    
+
     return true;
 
   } catch (error) {

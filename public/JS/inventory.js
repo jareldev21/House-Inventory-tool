@@ -92,8 +92,6 @@ function updateControls() {
       control.disabled = !ready || saving;
     });
 
-  byId("refreshInventoryBtn").disabled = !currentUser || saving;
-
   document.querySelectorAll(".drag-handle").forEach((handle) => {
     handle.disabled = !canReorder();
   });
@@ -157,8 +155,6 @@ async function loadCategories() {
 
     if (requestSession !== session) return;
 
-    byId("activeInventoryLabel").textContent = "Personal inventory";
-
     const snapshot = personal;
 
     if (requestSession !== session) return;
@@ -208,8 +204,6 @@ onAuthStateChanged(auth, (user) => {
   ready = false;
 
   saving = false;
-
-  byId("activeInventoryLabel").textContent = "Personal inventory";
 
   categories = [];
 
@@ -722,28 +716,42 @@ function dragHandle(kind, category, item = null) {
 
 // 6. Rendering. textContent prevents saved names from injecting HTML.
 function element(tag, className, text) {
+
   const node = document.createElement(tag);
+
   if (className) node.className = className;
+
   if (text !== undefined) node.textContent = text;
+
   return node;
 }
 
 function button(text, action, className = "", mutation = true) {
+
   const node = element("button", className, text);
+
   node.type = "button";
+
   if (mutation) node.dataset.mutation = "";
+
   node.addEventListener("click", action);
+
   return node;
 }
 
 function categoryIconImage(key, className) {
+
   const image = element("img", className);
+
   image.src = "../Files/branding/" + categoryIconKey(key) + ".svg";
+
   image.alt = "";
+
   return image;
 }
 
 function renderItem(category, item) {
+
   const status = stockStatus(item);
 
   const row = element("li", "item-card " + status);
@@ -938,5 +946,3 @@ byId("logout-button").addEventListener("click", async () => {
 });
 
 renderCategories();
-
-byId("refreshInventoryBtn").addEventListener("click", loadCategories);
