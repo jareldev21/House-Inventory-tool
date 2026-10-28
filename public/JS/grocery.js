@@ -131,7 +131,7 @@ function node(tag, className, value) {
   if (className) el.className = className;
 
   if (value != null) el.textContent = value;
-  
+
   return el;
 }
 
@@ -629,9 +629,13 @@ async function changeItem(id, changes) {
   );
 }
 async function importStatus(status) {
+
   if (!ready || saving) return;
+
   const additions = [];
+
   const existing = new Set(items.filter((i) => i.source).map((i) => i.source));
+
   for (const category of categories)
     for (const item of category.items) {
       if (stockStatus(item) !== status) continue;
@@ -655,37 +659,15 @@ async function importStatus(status) {
     );
     return;
   }
- const groceryItem = items.find(
-  (item) => item.id === selectedItemId
-);
 
-if (!groceryItem) {
-  throw new Error("Grocery item not found.");
-}
-
-const nextItems = items.map((item) =>
-  item.id === selectedItemId
-    ? { ...item, state: "bought", boughtQuantity, price }
-    : item
-);
-
-const isInventoryLinked =
-  groceryItem.source?.startsWith("personal/");
-
-const success = isInventoryLinked
-  ? await savePurchaseAndInventory(
-      nextItems,
-      groceryItem,
-      boughtQuantity
-    )
-  : await saveList(nextItems);
-
-if (success) {
-  byId("boughtDialog").close();
+if (await saveList([...items, ...additions])) {
+  feedback("Added " + additions.length + " items from inventory.");
 }
 
 }
+
 byId("importLow").addEventListener("click", () => importStatus("low"));
+
 byId("importUnavailable").addEventListener("click", () =>
   importStatus("unavailable"),
 );
