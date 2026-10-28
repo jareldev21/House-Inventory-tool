@@ -725,19 +725,23 @@ async function savePurchaseAndInventory(nextItems, groceryItem, quantityText) {
   if (!ready || saving || !user) return false;
 
   const token = session;
+
   const uid = user.uid;
 
   saving = true;
+
   controls();
 
   try {
-    await runTransaction(db, async (tx) => {
-      const ref = doc(db, "users", uid);
-      const snapshot = await tx.get(ref);
-      const data = snapshot.exists() ? snapshot.data() : {};
+    const savedCategories = await runTransaction(db, async (tx) => {const ref = doc(db, "users", uid);
 
-      const storedCategories = data.categories ?? [];
-      const storedGrocery = data.groceryItems ?? [];
+    const snapshot = await tx.get(ref);
+
+    const data = snapshot.exists() ? snapshot.data() : {};
+
+    const storedCategories = data.categories ?? [];
+
+    const storedGrocery = data.groceryItems ?? [];
 
       if (
         inventoryVersion(storedCategories) !== categoryVersion ||
@@ -751,6 +755,7 @@ async function savePurchaseAndInventory(nextItems, groceryItem, quantityText) {
       }
 
       const updatedCategories = normalizeCategories(storedCategories);
+
       const inventoryItem = findLinkedInventoryItem(
         groceryItem,
         updatedCategories
@@ -772,14 +777,20 @@ async function savePurchaseAndInventory(nextItems, groceryItem, quantityText) {
       );
     });
 
+    return updatedCategories;
+
     if (token !== session) return false;
 
-    saving = false;
-    await load();
+    items = nextItems;
 
-    if (!ready) return false;
+    categories = savedCategories;
+
+    version = inventoryVersion(nextItems);
+
+    categoryVersion = inventoryVersion(savedCategories);
 
     feedback("Purchase saved and Inventory quantity updated.");
+    
     return true;
 
   } catch (error) {
