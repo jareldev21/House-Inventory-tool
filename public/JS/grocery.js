@@ -172,6 +172,7 @@ function groceryHandle(item) {
     "aria-label",
     "Rearrange " + item.name + ". Drag or use up/down arrow keys.",
   );
+  
   handle.addEventListener("pointerdown", (event) => {
     if (!ready || saving || event.button !== 0 || groceryDrag) return;
     groceryDrag = {
@@ -202,7 +203,9 @@ function groceryHandle(item) {
       Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 7
     )
       return;
+
     event.preventDefault();
+
     if (!drag.active) {
       drag.active = true;
       handle.classList.add("dragging");
@@ -212,11 +215,14 @@ function groceryHandle(item) {
     drag.ghost.style.left =
       Math.min(event.clientX + 14, window.innerWidth - 50) + "px";
     drag.ghost.style.top = Math.max(5, event.clientY - 20) + "px";
+
     if (event.clientY < 55) window.scrollBy(0, -20);
+
     if (event.clientY > window.innerHeight - 55) window.scrollBy(0, 20);
-    document
-      .querySelectorAll(".grocery-drop-target")
+
+    document.querySelectorAll(".grocery-drop-target")
       .forEach((el) => el.classList.remove("grocery-drop-target"));
+
     const row = document
       .elementFromPoint(event.clientX, event.clientY)
       ?.closest(".grocery-item");
@@ -578,7 +584,7 @@ async function saveList(next) {
 
   saving = true;
 
-  items= next;
+  items = next;
 
   render();
 

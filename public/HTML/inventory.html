@@ -26,8 +26,8 @@
         </nav>
     </header>
 
-    <main class="wholepage">
-        <aside class="left-panel" aria-label="Inventory navigation and filters">
+    <main>
+        <aside aria-label="Inventory navigation and filters">
             <div class="sidebar">
                 <h2>Inventory</h2>
                 <p>Organize, track and manage your household items.</p>
@@ -38,18 +38,26 @@
             <div class="filters"><h2>Quick Filters</h2></div>
 
             <div class="filters-options" aria-label="Filter by stock status">
-                <button type="button" data-filter="all" aria-pressed="true"><span class="filter-dot"></span>All Items</button>
+                <button type="button" data-filter="all" aria-pressed="true">
+                    <span class="filter-dot"></span>All Items
+                </button>
                 <button type="button" data-filter="available" aria-pressed="false"><span class="filter-dot available"></span>Available</button>
                 <button type="button" data-filter="low" aria-pressed="false"><span class="filter-dot low"></span>Low Stock</button>
                 <button type="button" data-filter="unavailable" aria-pressed="false"><span class="filter-dot unavailable"></span>Unavailable</button>
             </div>
         </aside>
+
         <section class="inventorypage" aria-labelledby="itemsTitle">
+
             <section class="grocery-shortcuts" aria-label="Grocery shortcuts">
-                <div><h2>Going grocery shopping?</h2><p>Send items you need to your grocery list.</p></div>
+                <div>
+                    <h2>Going grocery shopping?</h2>
+                    <p>Send items you need to your grocery list.</p>
+                </div>
                 <a class="card-button" href="grocery.html?import=low">+ Add all Low Stock</a>
                 <a class="card-button" href="grocery.html?import=unavailable">+ Add all Unavailable</a>
             </section>
+
             <div class="row1">
                 <input type="search" id="search" aria-label="Search inventory items" placeholder="Search for items…">
                 <button type="button" id="addCategoryTopBtn" data-mutation disabled>+ Add Category</button>
@@ -57,16 +65,13 @@
             </div>
             <p id="inventoryMessage" class="save-status" role="status" aria-live="polite">Connecting to your account…</p>
             <button type="button" id="retryLoad" hidden>Reload inventory</button>
+
             <div class="row2">
                 <div><h2 id="itemsTitle">Your Items</h2><p>View, add, and manage your household inventory.</p></div>
                 <p id="itemCount" aria-live="polite"></p>
             </div>
-            <button 
-            type="button"
-            id="toggleReorderBtn"
-            aria-pressed="false"
-            >
-            Organize</button>
+
+            <button type="button" id="toggleReorderBtn" aria-pressed="false"> Organize</button>
             
             <p id="reorderHelp" class="reorder-help">Drag the grip handles to rearrange categories and items. Arrow keys also work.</p>
             <p id="emptyState" hidden></p>
@@ -78,8 +83,11 @@
                     <button type="button" id="addCategoryCardBtn" data-mutation disabled>+ Add Category</button>
                 </section>
             </div>
+
         </section>
+
     </main>
+
     <dialog id="categoryModal" aria-labelledby="categoryTitle">
         <form id="categoryForm">
             <h2 id="categoryTitle">Add Category</h2>

@@ -1,6 +1,16 @@
 /* Inventory layout, category cards, and quantity states. */
-.wholepage { display: grid; grid-template-columns: 245px minmax(0, 1fr); min-height: 65vh; background: radial-gradient(ellipse at top right, #36204e55, transparent 70%); }
-.left-panel { padding: 1.6rem 1.2rem; border-right: 1px solid #433058; }
+main { 
+    display: grid; 
+    grid-template-columns: 245px minmax(0, 1fr); 
+    min-height: 65vh; 
+    background: radial-gradient(ellipse at top right, #36204e55, transparent 70%); 
+}
+
+aside { 
+    padding: 1.6rem 1.2rem; 
+    border-right: 1px solid #433058; 
+}
+
 .sidebar { margin-bottom: 1.4rem; }
 .sidebar h2 { font-size: 1.2rem; }
 .sidebar p { font-size: .85rem; }
